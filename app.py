@@ -3,14 +3,20 @@ from flask import Flask, request
 from flask_cors import CORS
 import logging
 from datetime import datetime
-from typing import Any
 
 app = Flask(__name__)
 CORS(app)
 
+# Logging class init
 LogSetup(app)
 
-Logger = logging.getLogger("app.logger")
+# Logger
+Logger = logging.getLogger("app.access")
+
+@app.route('/', methods = ["GET"])
+def hello():
+    return "Hello World", 200
+
 
 @app.after_request
 def after_request(response):

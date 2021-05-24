@@ -2,7 +2,11 @@ from enum import Enum
 from typing import Union, Tuple, Any, Callable, TypeVar
 from functools import wraps
 from flask import jsonify
+import logging
+import traceback
 
+# Logger for errors
+errLogger = logging.getLogger("app.logger")
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -18,7 +22,7 @@ class status(tuple, Enum):
 
 class Response:
     @staticmethod
-    def responseFormat1(result : Union[list, str, dict], status) -> Tuple[Any, int]:
+    def responseFormat(result : Union[list, str, dict], status) -> Tuple[Any, int]:
         '''Responses of the type 
         {
             'result' : "RESULT", 
@@ -29,6 +33,9 @@ class Response:
         return jsonify({'result' : result, 'status' : status[0]}), status[2]
 
 class Utils:
+    '''
+    Class for error handling for routes
+    '''
 
     @staticmethod
     def getParams(request, params : tuple) -> Callable[[F], F]:
@@ -38,10 +45,11 @@ class Utils:
                 try:
                     data = {i : request.args.get(i) for i in params}
                     if None in data.values():
-                        return Response.responseFormat1("Please include all valid parameters", status.invalid)
+                        return Response.responseFormat("Please include all valid parameters", status.invalid)
                     return f(data, *args, **kwargs)
                 except Exception as e:
-                    return Response.responseFormat1(str(e), status.error)
+                    errLogger.error(traceback.format_exc())
+                    return Response.responseFormat(str(e), status.error)
             return wrapper
         return decorated
     
@@ -56,11 +64,12 @@ class Utils:
                         if sorted(received.keys()) == sorted(elements.keys()):
                             for i, j in received.items():
                                 if type(j) not in elements[i]:
-                                    return Response.responseFormat1("Datatypes not valid", status.invalid)
+                                    return Response.responseFormat("Datatypes not valid", status.invalid)
                             return f(received, *args, **kwargs)
-                        return Response.responseFormat1("Please include all valid key value pairs", status.invalid)
-                    return Response.responseFormat1("Please include body", status.invalid)
+                        return Response.responseFormat("Please include all valid key value pairs", status.invalid)
+                    return Response.responseFormat("Please include body", status.invalid)
                 except Exception as e:
-                    return Response.responseFormat1(str(e), status.error)
+                    errLogger.error(traceback.format_exc())
+                    return Response.responseFormat(str(e), status.error)
             return wrapper
         return decorated
