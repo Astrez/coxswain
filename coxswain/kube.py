@@ -2,10 +2,12 @@ from kubernetes import client, config
 import yaml
 
 class Kube():
+    deploymentObj = None
     def __init__(self) -> None:
         config.load_kube_config()
         self.v1 = client.CoreV1Api()
         self.k8s_apps_v1 = client.AppsV1Api()
+        
     
     def listPods(self):
         print("Listing pods with their IPs:")
@@ -13,13 +15,6 @@ class Kube():
         for i in ret.items:
             # spec.nodeName - the node's name
             print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
-
-    # def addDeployment(self,path):
-    #     with open(path) as f:
-    #         dep = yaml.safe_load(f)
-    #         resp = self.k8s_apps_v1.create_namespaced_deployment(
-    #             body=dep, namespace="default")
-    #         print("Deployment created. status='%s'" % resp.metadata.name)
 
 
     def create_deployment_object(self,deployment_name,conatiner_name,conatiner_image,replicas):
@@ -60,7 +55,7 @@ class Kube():
 
     def create_deployment(self):
         # Create deployement
-        deployment = create_deployment_object("nginx", "nginx:1.15.4", 3)
+        deployment = self.create_deployment_object("mydep2","nginx", "nginx:1.15.4", 2)
 
         resp = self.k8s_apps_v1.create_namespaced_deployment(
             body=deployment, namespace="default"
@@ -78,27 +73,38 @@ class Kube():
             )
         )
 
-    def list_all_deploymanets(self):
+    def list_all_deployments(self):
         print("Listing all deployments:")
         ret = self.k8s_apps_v1.list_deployment_for_all_namespaces(watch=False,pretty=True)
-        for i in ret.items:
-            print(i)
+        print("%s\t%s\t%s\t\t%s\t\t\t%s" % ("NAMESPACE", "NAME", "REVISION", "IMAGE","REPLICAS"))
+        for resp in ret.items:
+            print(
+            "%s\t%s\t%s\t\t%s\t\t\t%s"
+            % (
+                resp.metadata.namespace,
+                resp.metadata.name,
+                resp.metadata.generation,
+                resp.spec.template.spec.containers[0].image,
+                resp.spec.replicas
+            )
+            )
 
-    def update_deployment_image(self,deployment,image,replicas):
+    def update_deployment_image(self,name,namespace,image,replicas):
         # Update container image
         # deployment.spec.template.spec.containers[0].image = "nginx:1.16.0"
-        deployment.spec.template.spec.containers[0].image = image
-        deployment.spec.replicas = replicas
+        deployment = self.create_deployment_object("mydep1","nginx",image, replicas)
+        # deployment.spec.template.spec.containers[0].image = image
+        # deployment.spec.replicas = replicas
 
         # patch the deployment
         resp = self.k8s_apps_v1.patch_namespaced_deployment(
-            name=DEPLOYMENT_NAME, namespace="default", body=deployment
+            name=name, namespace=namespace, body=deployment
         )
 
         print("\n[INFO] deployment's container image updated.\n")
-        print("%s\t%s\t\t\t%s\t%s" % ("NAMESPACE", "NAME", "REVISION", "IMAGE"))
+        print("%s\t%s\t%s\t\t%s" % ("NAMESPACE", "NAME", "REVISION", "IMAGE"))
         print(
-            "%s\t\t%s\t%s\t\t%s\n"
+            "%s\t%s\t%s\t\t%s\n"
             % (
                 resp.metadata.namespace,
                 resp.metadata.name,
@@ -133,12 +139,12 @@ class Kube():
     def display_pods_of_node(self,node_name):
         print("Listing pods with their IPs on node: ", node_name)
         field_selector = 'spec.nodeName='+node_name
-        ret = v1.list_pod_for_all_namespaces(watch=False, field_selector=field_selector)
+        ret = self.v1.list_pod_for_all_namespaces(watch=False, field_selector=field_selector)
         for i in ret.items:
             print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
 
     def display_pods_log(self,name,namespace):    
-        res = self.vi.read_namespaced_pod_log(name=pod_name, namespace=namespace)
+        res = self.v1.read_namespaced_pod_log(name=name, namespace=namespace)
         print(res)
 
     def delete_pod(self,name,namespace):
@@ -149,4 +155,10 @@ class Kube():
 
 if __name__ == '__main__':
     k = Kube()
-    k.addDeployment('test.yaml')
+    k.listPods()
+    # k.create_deployment()
+    # k.delete_deployment("mydep1","default")
+    k.list_all_deployments()
+    # k.update_deployment_image("mydep1","default","nginx:1.16.0",1)
+    
+    
