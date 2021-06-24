@@ -5,10 +5,12 @@ import logging
 from datetime import datetime
 
 app = Flask(__name__)
-CORS(app)
-
 # Logging class init
 LogSetup(app)
+
+model = Database()
+CORS(app)
+kubeConnection = Kube()
 
 # Logger
 Logger = logging.getLogger("app.access")
@@ -16,6 +18,22 @@ Logger = logging.getLogger("app.access")
 @app.route('/', methods = ["GET"])
 def hello():
     return "Hello World", 200
+
+# Signin route
+@app.route('/auth/signin', methods = ["POST"])
+def signin():
+    body = request.get_json()
+    if model.compare(body):
+        return "Hello World", 200
+    return "Not Authorized", 403
+
+
+@app.route('/auth/signup', methods = ["POST"])
+def signup():
+    body = request.get_json()
+    if model.newUser(body):
+        return "Hello World", 200
+    return "Database Error", 500
 
 
 @app.after_request

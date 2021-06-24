@@ -24,8 +24,10 @@ class LogSetup(object):
     LOG_DIR = "./"
     ERR_FILE = 'app.log'
     REQ_FILE = 'req.log'
+    SCALER_FILE = 'scale.log'
     ERR_LOG_LEVEL = 'DEBUG'
     REQ_LOG_LEVEL = 'INFO'
+    SCALER_LOG_LEVEL = 'INFO'
 
     def __init__(self, app) -> None:
         '''Setup Logging system for error and request logging
@@ -35,6 +37,7 @@ class LogSetup(object):
 
         appLog = "/".join([LogSetup.LOG_DIR, LogSetup.ERR_FILE])
         wwwLog = "/".join([LogSetup.LOG_DIR, LogSetup.REQ_FILE])
+        scalerLog = "/".join([LogSetup.LOG_DIR, LogSetup.SCALER_FILE])
         loggingPolicy = "logging.handlers.WatchedFileHandler"
 
         # dictConfig 
@@ -55,6 +58,11 @@ class LogSetup(object):
                     "handlers": ["access_logs"],
                     "propagate": False,
                 },
+                "app.scale": {
+                    "level": LogSetup.SCALER_LOG_LEVEL,
+                    "handlers": ["scaler_logs"],
+                    "propagate": False,
+                },
                 "root": {"level": LogSetup.ERR_LOG_LEVEL, "handlers": ["default"]},
             }
         }
@@ -71,6 +79,13 @@ class LogSetup(object):
                         "level": LogSetup.REQ_LOG_LEVEL,
                         "class": loggingPolicy,
                         "filename": wwwLog,
+                        "formatter": "access",
+                        "delay": True,
+                    },
+                    "scaler_logs": {
+                        "level": LogSetup.SCALER_LOG_LEVEL,
+                        "class": loggingPolicy,
+                        "filename": scalerLog,
                         "formatter": "access",
                         "delay": True,
                     },
