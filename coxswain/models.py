@@ -1,69 +1,73 @@
 import redis
-from .kube import Kube
-import statistics
+import hashlib
+import os
 import logging
+import traceback
 
-logger = logging.getLogger("app.scale")
+from typing import TypeVar, Callable, Any
 
+F = TypeVar('F', bound=Callable[..., Any])
+logger = logging.getLogger("app.logger")
 
 class Database():
 
+    def _errorHandler(func : F) -> F:
+        def wrapper(self, *args, **kwargs) -> Any:
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                logger.error(str(e) + '\n' + traceback.format_exc())
+                raise e
+        return wrapper
+
+    @_errorHandler
     def __init__(self) -> None:
         self.__redis = redis.Redis()
 
         assert self.__redis.ping(), "Connection Error"
-
-        # Setup basic details like replica count on database
 
     @property
     def redis(self):
         # For custom queries
         return self.__redis
 
+    @_errorHandler
     def compare(self, cred : dict) -> bool:
-        if self._exists(cred['username']):
-            if self.__redis.get(cred['username']) == cred['password']:
+        if self._exists(cred.get('username')):
+            password = self.__redis.get(cred['username']).decode("utf-8")
+            hashed = hashlib.pbkdf2_hmac('sha256', cred['password'].encode('utf-8'), bytes.fromhex(password[:64]), 100000)
+            if hashed.hex() == password[64:]:
                 return True
         return False
 
+    @_errorHandler
     def _exists(self, username : str) -> bool:
         return self.__redis.exists(username)
 
+
+    @_errorHandler
     def newUser(self, username : str, password : str) -> None:
-        pass
-
-    def setReplicas(self, count : int):
-        pass
-
-    def getReplicas(self):
-        pass
-
-
-class Scaler(Database):
-
-    def __init__(self, kube : Kube = None) -> None:
-        super().__init__()
-        self.kube = kube
-        assert self.kube != None , "No connection to cluster"
-
-    
-    def setReplicas(self, no : int) -> None:
-        # Set replicas on the database
-        pass
+        if self._exists(username):
+            return False
+        salt = os.urandom(32)
+        hashed = salt.hex() + hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000).hex()
+        self.__redis.set(username, hashed)
+        return True
     
 
-    def setup(self, maxReplicas : int = 5) -> None:
-        # Setup current number of replicas running on db
-        # Setup max replicas
-        self.maxReplicas = maxReplicas
-        pass
+    @_errorHandler
+    def replicaInit(self, count : int) -> None:
+        self.__redis.set("scaler", count)
 
-    def _exception(self):
-        pass
 
-    def monitor(self):
-        # Get number of active replicas
-        # if replicas == max replicas, raise warning and do nothing
-        # else calculate the increemnt required
-        # Stop the thread with exception
-        pass
+    @_errorHandler
+    def setReplicas(self, count : int) -> None:
+        if count > 0:
+            self.__redis.incrby("scaler", count)
+        else:
+            self.__redis.decrby("scaler", abs(count))
+
+
+    @_errorHandler
+    def getReplicas(self) -> int:
+        return int(self.__redis.get("scaler"))
