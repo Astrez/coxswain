@@ -86,7 +86,7 @@ class LogSetup(object):
                         "level": LogSetup.SCALER_LOG_LEVEL,
                         "class": loggingPolicy,
                         "filename": scalerLog,
-                        "formatter": "access",
+                        "formatter": "default",
                         "delay": True,
                     },
                 }
