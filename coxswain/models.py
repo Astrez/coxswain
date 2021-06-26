@@ -4,7 +4,7 @@ import os
 import logging
 import traceback
 
-from typing import TypeVar, Callable, Any
+from typing import Tuple, TypeVar, Callable, Any
 
 F = TypeVar('F', bound=Callable[..., Any])
 logger = logging.getLogger("app.logger")
@@ -71,3 +71,29 @@ class Database():
     @_errorHandler
     def getReplicas(self) -> int:
         return int(self.__redis.get("scaler"))
+
+    def initScaler(self) -> Tuple[bool, bool]:
+        flag = False
+        if self._exists("scalerState"):
+            flag = True
+            if self.__redis.get("scalerState").decode("utf-8").lower() == "on":
+                return False, False                
+        self.__redis.set("scalerState", "on")
+        return True, flag
+            
+    
+    def endScaler(self) -> None:
+        if self._exists("scalerState"):
+            self.__redis.set("scalerState", "off")
+        else:
+            raise Exception("Invalid state")       
+
+    
+    def checkAbort(self):
+        if self._exists("scalerState"):
+            if self.__redis.get("scalerState").decode("utf-8").lower() == "on":
+                return False
+            else:
+                return True
+        else:
+            raise Exception("Invalid state")
