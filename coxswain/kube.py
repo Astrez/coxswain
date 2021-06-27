@@ -1,56 +1,68 @@
+from typing import List
 from kubernetes import client, config
 import yaml
 
 class Kube():
     
-    def __init__(self) -> None:
-        config.load_kube_config()
+    def __init__(self, configFile : str) -> None:
+        config.load_kube_config(config_file=configFile)
         self.v1 = client.CoreV1Api()
         self.k8s_apps_v1 = client.AppsV1Api()
         self.deploymentObj = None
 
-    def createDeploymentObject(self,deploymentName,conatinerName,conatinerImage,replicas):
+    def _createDeploymentObject(self, deploymentName : str, conatinerName : str, conatinerImage : str, replicas : int = 1):
         # Configureate Pod template container
         container = client.V1Container(
             # name="nginx",
-            name=conatinerName,
+            name = conatinerName,
             # image="nginx:1.15.4",
-            image=conatinerImage,
-            ports=[client.V1ContainerPort(container_port=80)],
-            resources=client.V1ResourceRequirements(
-                requests={"cpu": "100m", "memory": "200Mi"},
-                limits={"cpu": "500m", "memory": "500Mi"},
+            image = conatinerImage,
+            ports = [
+                client.V1ContainerPort(container_port=80)
+            ],
+            resources = client.V1ResourceRequirements(
+                requests = {"cpu": "100m", "memory": "200Mi"},
+                limits = {"cpu": "500m", "memory": "500Mi"},
             ),
         )
 
         # Create and configurate a spec section
         template = client.V1PodTemplateSpec(
-            metadata=client.V1ObjectMeta(labels={"app": conatinerName}),
-            spec=client.V1PodSpec(containers=[container]),
+            metadata = client.V1ObjectMeta(
+                labels = {"app": conatinerName}
+            ),
+            spec = client.V1PodSpec(
+                containers=[container]
+            ),
         )
 
         # Create the specification of deployment
         spec = client.V1DeploymentSpec(
-            replicas=replicas, template=template, selector={
+            replicas = replicas, 
+            template = template, 
+            selector = {
                 "matchLabels":
-                {"app": conatinerName}})
+                {"app": conatinerName}
+            }
+        )
 
         # Instantiate the deployment object
         deployment = client.V1Deployment(
-            api_version="apps/v1",
-            kind="Deployment",
-            metadata=client.V1ObjectMeta(name=deploymentName),
-            spec=spec,
+            api_version = "apps/v1",
+            kind = "Deployment",
+            metadata = client.V1ObjectMeta(name = deploymentName),
+            spec = spec,
         )
 
         return deployment
 
-    def createDeployment(self,deploymentName,deploymentNameSpace,conatinerName,conatinerImage,Replicas):
+    def createDeployment(self,deploymentName : str, conatinerName : str, conatinerImage : str, Replicas : int = 1, deploymentNameSpace : str = 'default') -> bool:
         # Create deployement
-        self.deploymentObj = self.createDeploymentObject(deploymentName,conatinerName,conatinerImage,Replicas)
+        self.deploymentObj = self._createDeploymentObject(deploymentName, conatinerName, conatinerImage, Replicas)
 
         resp = self.k8s_apps_v1.create_namespaced_deployment(
-            body=self.deploymentObj, namespace=deploymentNameSpace
+            body = self.deploymentObj, 
+            namespace = deploymentNameSpace
         )
 
         # print("\n[INFO] deployment `nginx-deployment` created.\n")
@@ -65,46 +77,59 @@ class Kube():
         #     )
         # )
 
-    def getDeploymentInfo(self,name,namespace):
-        resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace, pretty=pretty, exact=exact, export=export)
-        ans = {"name" : resp.metadata.name, "namespace" :resp.metadata.namespace
-                "revision" : resp.metadata.generation, "numberOfContainers" : len(resp.spec.template.spec.containers),
-                "containerName" : resp.spec.template.spec.containers[0].name,
-                "containerImage" : resp.spec.template.spec.containers[0].image, "replicas" : resp.spec.replicas,
-                "maxContainerCpuLimit": resp.spec.template.spec.containers[0].resources.limits.cpu , 
-                "maxContainerMemoryLimit" : resp.spec.template.spec.containers[0].resources.limits.memory,
-                "minContainerCpu" : resp.spec.template.spec.containers[0].resources.requests.cpu,
-                "minContainerMemory" : resp.spec.template.spec.containers[0].resources.requests.memory,
-            }
+    def getDeploymentInfo(self, name : str, namespace : str) -> dict:
+        resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace, exact=True, export=True)
+        ans = {
+            "name" : resp.metadata.name, 
+            "namespace" :resp.metadata.namespace,
+            "revision" : resp.metadata.generation, 
+            "numberOfContainers" : len(resp.spec.template.spec.containers),
+            "containerName" : resp.spec.template.spec.containers[0].name,
+            "containerImage" : resp.spec.template.spec.containers[0].image, 
+            "replicas" : resp.spec.replicas,
+            "maxContainerCpuLimit": resp.spec.template.spec.containers[0].resources.limits.cpu , 
+            "maxContainerMemoryLimit" : resp.spec.template.spec.containers[0].resources.limits.memory,
+            "minContainerCpu" : resp.spec.template.spec.containers[0].resources.requests.cpu,
+            "minContainerMemory" : resp.spec.template.spec.containers[0].resources.requests.memory,
+        }
         return ans
     
-    def listPods(self):
-        print("Listing pods with their IPs:")
+    def listPods(self) -> List[dict]:
+        # print("Listing pods with their IPs:")
         ret = self.v1.list_pod_for_all_namespaces(watch=False)
         ans = list()
         for i in ret.items: 
-            d = {"podName" :  i.metadata.name, "podNameSpace" :  i.metadata.namespace ,"podIP" : i.status.pod_ip,
-            "numberOfContainers" : len(i.spec.containers),"containerName" :  i.spec.containers[0].name,
-            "containerImage" : i.spec.containers[0].image, 
-            "maxContainerCpuLimit":i.spec.containers[0].resources.limits.cpu , 
-            "maxContainerMemoryLimit" : i.spec.containers[0].resources.limits.memory,
-            "minContainerCpu" : i.spec.containers[0].resources.requests.cpu,
-            "minContainerMemory" : i.spec.containers[0].resources.requests.memory}
+            d = {
+                "podName" :  i.metadata.name, 
+                "podNameSpace" :  i.metadata.namespace ,
+                "podIP" : i.status.pod_ip,
+                "numberOfContainers" : len(i.spec.containers),
+                "containerName" :  i.spec.containers[0].name,
+                "containerImage" : i.spec.containers[0].image, 
+                "maxContainerCpuLimit":i.spec.containers[0].resources.limits.cpu , 
+                "maxContainerMemoryLimit" : i.spec.containers[0].resources.limits.memory,
+                "minContainerCpu" : i.spec.containers[0].resources.requests.cpu,
+                "minContainerMemory" : i.spec.containers[0].resources.requests.memory
+            }
             ans.append(d)
             # print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
         return ans
 
 
-    def listAllDeployments(self):
-        print("Listing all deployments:")
+    def listAllDeployments(self) -> List[dict]:
+        # print("Listing all deployments:")
         ret = self.k8s_apps_v1.list_deployment_for_all_namespaces(watch=False,pretty=True)
-        print("%s\t%s\t%s\t\t%s\t\t\t%s" % ("NAMESPACE", "NAME", "REVISION", "IMAGE","REPLICAS"))
+        # print("%s\t%s\t%s\t\t%s\t\t\t%s" % ("NAMESPACE", "NAME", "REVISION", "IMAGE","REPLICAS"))
         ans = list()
         for resp in ret.items:
-            d = {"name" : resp.metadata.name, "namespace" :resp.metadata.namespace
-                "revision" : resp.metadata.generation,"numberOfContainers" : len(resp.spec.template.spec.containers),
-                 "containerName" : resp.spec.template.spec.containers[0].name,
-                "containerImage" : resp.spec.template.spec.containers[0].image, "replicas" : resp.spec.replicas,
+            d = {
+                "name" : resp.metadata.name, 
+                "namespace" :resp.metadata.namespace,
+                "revision" : resp.metadata.generation,
+                "numberOfContainers" : len(resp.spec.template.spec.containers),
+                "containerName" : resp.spec.template.spec.containers[0].name,
+                "containerImage" : resp.spec.template.spec.containers[0].image, 
+                "replicas" : resp.spec.replicas,
                 "maxContainerCpuLimit": resp.spec.template.spec.containers[0].resources.limits.cpu , 
                 "maxContainerMemoryLimit" : resp.spec.template.spec.containers[0].resources.limits.memory,
                 "minContainerCpu" : resp.spec.template.spec.containers[0].resources.requests.cpu,
@@ -124,17 +149,19 @@ class Kube():
         return ans
 
     def getReplicaNumber(self,name,namespace):
-        resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace, pretty=pretty, exact=exact, export=export)
+        resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace, exact=True, export=True)
         return resp.spec.replicas
 
-    def updateDeploymentImage(self,name,namespace,image):
+    def updateDeploymentImage(self, name : str, image : str, namespace : str = 'default'):
         # Update container image
         self.deploymentObj.spec.template.spec.containers[0].image = image
         # deployment = self.create_deployment_object("mydep1","nginx",image, replicas)
 
         # patch the deployment
         resp = self.k8s_apps_v1.patch_namespaced_deployment(
-            name=name, namespace=namespace, body=self.deploymentObj
+            name = name, 
+            namespace = namespace, 
+            body = self.deploymentObj
         )
 
         # print("\n[INFO] deployment's container image updated.\n")
@@ -149,7 +176,7 @@ class Kube():
         #     )
         # )
 
-    def updateDeploymentReplicas(self,name,namespace,replicas):
+    def updateDeploymentReplicas(self, name : str, namespace : str, replicas : int):
         # Update container image
         self.deploymentObj.spec.replicas += replicas
         # deployment = self.create_deployment_object("mydep1","nginx",image, replicas)
@@ -157,17 +184,20 @@ class Kube():
 
         # patch the deployment
         resp = self.k8s_apps_v1.patch_namespaced_deployment(
-            name=name, namespace=namespace, body=self.deploymentObj
+            name = name, 
+            namespace = namespace, 
+            body = self.deploymentObj
         )
 
         # print("\n[INFO] deployment's container replicas updated.\n")
 
     def deleteDeployment(self,name,namespace):
         resp = self.k8s_apps_v1.delete_namespaced_deployment(
-            name=name,
-            namespace=namespace,
-            body=client.V1DeleteOptions(
-                propagation_policy="Foreground", grace_period_seconds=5
+            name = name,
+            namespace = namespace,
+            body = client.V1DeleteOptions(
+                propagation_policy = "Foreground", 
+                grace_period_seconds = 5
             ),
         )
         # print("\n[INFO] deployment deleted.")
