@@ -94,6 +94,18 @@ def stopAutoScaler():
     model.endScaler()
     return Response.responseFormat("", status.success)
 
+@app.route('/deployment/create', methods = ["POST"])
+def createDeployment():
+    '''
+    Ceate new deployment
+    '''
+    body = request.get_json()
+    try:
+        kubeConnection.createDeployment(body.get('deploymentName'), body.get('containerName'), body.get('containerImage'))
+        return Response.responseFormat("", status.success)
+    except Exception as e:
+        return Response.responseFormat("", status.error)
+
 # _______________________________AUTH_____________________________________
 # Signin route
 @app.route('/auth/signin', methods = ["POST"])
