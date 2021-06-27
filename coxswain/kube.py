@@ -212,5 +212,7 @@ if __name__ == '__main__':
     # k.updateDeploymentImage("mydep1","default","nginx:1.16.0")
     # k.updateDeploymentReplicas("mydep1","default",2)
     # k.updateDeploymentReplicas("mydep1","default",-1)
+    # k.getDeploymentInfo("mydep1","default");
+    # k.getReplicaNumber("mydep1","default")
     
     
