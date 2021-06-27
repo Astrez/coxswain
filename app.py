@@ -1,10 +1,12 @@
 from coxswain import *
+
 from flask import Flask, request
 from flask_cors import CORS
-import logging
-import jwt
 from datetime import datetime
 from threading import Thread
+
+import logging
+import jwt
 
 app = Flask(__name__)
 # Logging class init
@@ -28,7 +30,7 @@ def dashboard():
     Dashboard route
     '''
     # get details of pods and other specs from the server
-    if (result := kubeConnection.getDashboard()):
+    if (result := kubeConnection.listPods(sendall=True)):
         return Response.responseFormat(result, status.success)
     return Response.responseFormat("", status.failure)
 
@@ -37,29 +39,32 @@ def updateImage():
     '''
     update image
     {
+        "name" : "deployment name",
         "image" : "image name"
     }
     '''
     body = request.get_json()
-    if (result := kubeConnection.updateImage(body.get('image'))):
+    if (result := kubeConnection.updateDeploymentImage(body.get('name'), body.get('image'))):
         return Response.responseFormat(result, status.success)
     return Response.responseFormat("", status.failure)
 
-@app.route('/deployment/details', methods = ["GET"])
+@app.route('/deployment/details', methods = ["POST"])
 def getDeploymentDetails():
     '''
     deployment details
     '''
-    if (result := kubeConnection.getDeploymentDetails()):
+    body = request.get_json()
+    if (result := kubeConnection.getDeploymentInfo(body.get('name'))):
         return Response.responseFormat(result, status.success)
     return Response.responseFormat("", status.failure)
 
-@app.route('/deployment/replicas', methods = ["GET"])
+@app.route('/deployment/replicas', methods = ["POST"])
 def replicas():
     '''
     Number of active replicas
     '''
-    if (result := kubeConnection.getReplicas()):
+    body = request.get_json()
+    if (result := kubeConnection.getReplicaNumber(body.get('name'))):
         return Response.responseFormat(result, status.success)
     return Response.responseFormat("", status.failure)
 
@@ -68,11 +73,12 @@ def scale():
     '''
     up/down scale
     {
+        "name" : "deployment name",
         "factor" : -5 to 5
     }
     '''
     body = request.get_json()
-    if (result := kubeConnection.scale(body.get('factor'))):
+    if (result := kubeConnection.updateDeploymentReplicas(body.get('name'), body.get('factor'))):
         return Response.responseFormat(result, status.success)
     return Response.responseFormat("", status.failure)
 

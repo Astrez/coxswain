@@ -1,6 +1,7 @@
-import logging
 from logging.config import dictConfig
 from flask.logging import default_handler
+
+import logging
 
 # Logger for errors
 errLogger = logging.getLogger("app.logger")
