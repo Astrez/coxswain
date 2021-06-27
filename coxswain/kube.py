@@ -1,8 +1,24 @@
-from typing import List
+from typing import TypeVar, Callable, Any, List
 from kubernetes import client, config
+from kubernetes.client import exceptions
+
 import yaml
+import traceback
+import logging
+
+F = TypeVar('F', bound=Callable[..., Any])
+logger = logging.getLogger("app.logger")
 
 class Kube():
+
+    def _errorHandler(func : F) -> F:
+        def wrapper(self, *args, **kwargs) -> Any:
+            try:
+                return func(self, *args, **kwargs)
+            except exceptions.ApiException as e:
+                logger.error(str(e) + '\n' + traceback.format_exc())
+                return None
+        return wrapper
     
     def __init__(self, configFile : str) -> None:
         config.load_kube_config(config_file=configFile)
@@ -10,6 +26,7 @@ class Kube():
         self.k8s_apps_v1 = client.AppsV1Api()
         self.deploymentObj = None
 
+    
     def _createDeploymentObject(self, deploymentName : str, conatinerName : str, conatinerImage : str, replicas : int = 1):
         # Configureate Pod template container
         container = client.V1Container(
@@ -55,7 +72,36 @@ class Kube():
         )
 
         return deployment
+    
+    def _createLoadBalancer(self, deploymentName : str, containerName : str):
+        
+        ports = client.V1ServicePort(
+            # protocol="TCP",
+            port=6000,
+            target_port=5000
+        )
 
+        spec = client.V1ServiceSpec(
+            selector = {"app": deploymentName},
+            ports = [client.V1ServicePort(port=8080, target_port=5000)],
+            type = "LoadBalancer",
+            # external_i_ps=["172.31.37.96"]
+        )
+
+        deployment = client.V1Service(
+            api_version = "v1",
+            kind = "Service",
+            metadata = client.V1ObjectMeta(name = deploymentName + '-service-beta', annotations={"metallb.universe.tf/address-pool" : "production-public-ips"}),
+            spec = spec,
+            # status = client.V1LoadBalancerStatus(
+            #     ingress= client.V1LoadBalancerIngress(
+            #         ip="172.31.37.96",
+            #     )
+            # )
+        )
+        return deployment
+
+    @_errorHandler
     def createDeployment(self,deploymentName : str, conatinerName : str, conatinerImage : str, Replicas : int = 1, deploymentNameSpace : str = 'default') -> bool:
         # Create deployement
         self.deploymentObj = self._createDeploymentObject(deploymentName, conatinerName, conatinerImage, Replicas)
@@ -64,105 +110,88 @@ class Kube():
             body = self.deploymentObj, 
             namespace = deploymentNameSpace
         )
+        return True
 
-        # print("\n[INFO] deployment `nginx-deployment` created.\n")
-        # print("%s\t%s\t\t\t%s\t%s" % ("NAMESPACE", "NAME", "REVISION", "IMAGE"))
-        # print(
-        #     "%s\t\t%s\t%s\t\t%s\n"
-        #     % (
-        #         resp.metadata.namespace,
-        #         resp.metadata.name,
-        #         resp.metadata.generation,
-        #         resp.spec.template.spec.containers[0].image,
-        #     )
-        # )
-
-    def getDeploymentInfo(self, name : str, namespace : str) -> dict:
-        resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace, exact=True, export=True)
-        ans = {
-            "name" : resp.metadata.name, 
-            "namespace" :resp.metadata.namespace,
-            "revision" : resp.metadata.generation, 
-            "numberOfContainers" : len(resp.spec.template.spec.containers),
-            "containerName" : resp.spec.template.spec.containers[0].name,
-            "containerImage" : resp.spec.template.spec.containers[0].image, 
-            "replicas" : resp.spec.replicas,
-            "maxContainerCpuLimit": resp.spec.template.spec.containers[0].resources.limits.cpu , 
-            "maxContainerMemoryLimit" : resp.spec.template.spec.containers[0].resources.limits.memory,
-            "minContainerCpu" : resp.spec.template.spec.containers[0].resources.requests.cpu,
-            "minContainerMemory" : resp.spec.template.spec.containers[0].resources.requests.memory,
-        }
-        return ans
-    
-    def listPods(self) -> List[dict]:
-        # print("Listing pods with their IPs:")
-        ret = self.v1.list_pod_for_all_namespaces(watch=False)
-        ans = list()
-        for i in ret.items: 
-            d = {
-                "podName" :  i.metadata.name, 
-                "podNameSpace" :  i.metadata.namespace ,
-                "podIP" : i.status.pod_ip,
-                "numberOfContainers" : len(i.spec.containers),
-                "containerName" :  i.spec.containers[0].name,
-                "containerImage" : i.spec.containers[0].image, 
-                "maxContainerCpuLimit":i.spec.containers[0].resources.limits.cpu , 
-                "maxContainerMemoryLimit" : i.spec.containers[0].resources.limits.memory,
-                "minContainerCpu" : i.spec.containers[0].resources.requests.cpu,
-                "minContainerMemory" : i.spec.containers[0].resources.requests.memory
-            }
-            ans.append(d)
-            # print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
-        return ans
-
-
-    def listAllDeployments(self) -> List[dict]:
-        # print("Listing all deployments:")
-        ret = self.k8s_apps_v1.list_deployment_for_all_namespaces(watch=False,pretty=True)
-        # print("%s\t%s\t%s\t\t%s\t\t\t%s" % ("NAMESPACE", "NAME", "REVISION", "IMAGE","REPLICAS"))
-        ans = list()
-        for resp in ret.items:
-            d = {
+    @_errorHandler
+    def getDeploymentInfo(self, name : str, namespace : str = 'default') -> dict:
+        resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
+        ans = None
+        if resp:
+            ans = {
                 "name" : resp.metadata.name, 
                 "namespace" :resp.metadata.namespace,
-                "revision" : resp.metadata.generation,
+                "revision" : resp.metadata.generation, 
                 "numberOfContainers" : len(resp.spec.template.spec.containers),
                 "containerName" : resp.spec.template.spec.containers[0].name,
                 "containerImage" : resp.spec.template.spec.containers[0].image, 
                 "replicas" : resp.spec.replicas,
-                "maxContainerCpuLimit": resp.spec.template.spec.containers[0].resources.limits.cpu , 
-                "maxContainerMemoryLimit" : resp.spec.template.spec.containers[0].resources.limits.memory,
-                "minContainerCpu" : resp.spec.template.spec.containers[0].resources.requests.cpu,
-                "minContainerMemory" : resp.spec.template.spec.containers[0].resources.requests.memory,
+                "limits": resp.spec.template.spec.containers[0].resources.limits , 
+                "requests" : resp.spec.template.spec.containers[0].resources.requests
             }
-            ans.append(d)
-            # print(
-            # "%s\t%s\t%s\t\t%s\t\t\t%s"
-            # % (
-            #     resp.metadata.namespace,
-            #     resp.metadata.name,
-            #     resp.metadata.generation,
-            #     resp.spec.template.spec.containers[0].image,
-            #     resp.spec.replicas
-            # )
-            # )
+        return ans
+    
+    @_errorHandler
+    def listPods(self, sendall : bool = False) -> List[dict]:
+        pods = self.v1.list_pod_for_all_namespaces(watch=False)
+        response = [
+            {
+                "podName" :  i.metadata.name, 
+                "namespace" :  i.metadata.namespace ,
+                "podIP" : i.status.pod_ip,
+                "numberOfContainers" : len(i.spec.containers),
+                "containerName" :  i.spec.containers[0].name,
+                "containerImage" : i.spec.containers[0].image, 
+                "limits": i.spec.containers[0].resources.limits , 
+                "requests" : i.spec.containers[0].resources.requests,
+                "status" : i.status.phase
+            } 
+            for i in pods.items if i.metadata.namespace != "kube-system" or sendall
+        ]
+        return response
+
+    @_errorHandler
+    def listAllDeployments(self, sendall : bool = False) -> List[dict]:
+        ret = self.k8s_apps_v1.list_deployment_for_all_namespaces(watch=False,pretty=True)
+        ans = list()
+        for resp in ret.items:
+            if resp.metadata.name != "coredns" or sendall:
+                d = {
+                    "name" : resp.metadata.name, 
+                    "namespace" :resp.metadata.namespace,
+                    "revision" : resp.metadata.generation,
+                    "numberOfContainers" : len(resp.spec.template.spec.containers),
+                    "containerName" : resp.spec.template.spec.containers[0].name,
+                    "containerImage" : resp.spec.template.spec.containers[0].image, 
+                    "replicas" : resp.spec.replicas,
+                    "limits": resp.spec.template.spec.containers[0].resources.limits, 
+                    "requests" : resp.spec.template.spec.containers[0].resources.requests
+                }
+                ans.append(d)
+        print(ans)
         return ans
 
-    def getReplicaNumber(self,name,namespace):
-        resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace, exact=True, export=True)
-        return resp.spec.replicas
+    @_errorHandler
+    def getReplicaNumber(self,name : str, namespace : str = 'default') -> int:
+        resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
+        return int(resp.spec.replicas)
 
-    def updateDeploymentImage(self, name : str, image : str, namespace : str = 'default'):
+    @_errorHandler
+    def updateDeploymentImage(self, name : str, image : str, namespace : str = 'default') -> bool:
         # Update container image
+        response = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
+        response.spec.template.spec.containers[0].image = image
         self.deploymentObj.spec.template.spec.containers[0].image = image
         # deployment = self.create_deployment_object("mydep1","nginx",image, replicas)
-
+        # print(self.deploymentObj.spec.template.spec.containers[0].image)
         # patch the deployment
         resp = self.k8s_apps_v1.patch_namespaced_deployment(
             name = name, 
             namespace = namespace, 
-            body = self.deploymentObj
+            body = response
+            # body = self.deploymentObj
+
         )
+        return True
 
         # print("\n[INFO] deployment's container image updated.\n")
         # print("%s\t%s\t%s\t\t%s" % ("NAMESPACE", "NAME", "REVISION", "IMAGE"))
@@ -176,22 +205,25 @@ class Kube():
         #     )
         # )
 
-    def updateDeploymentReplicas(self, name : str, namespace : str, replicas : int):
+    @_errorHandler
+    def updateDeploymentReplicas(self, name : str, replicas : int, namespace : str = 'default') -> bool:
         # Update container image
-        self.deploymentObj.spec.replicas += replicas
-        # deployment = self.create_deployment_object("mydep1","nginx",image, replicas)
+        response = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
+        response.spec.replicas  += replicas
+        # self.deploymentObj.spec.replicas  += replicas
         # deployment.spec.replicas = replicas
 
         # patch the deployment
         resp = self.k8s_apps_v1.patch_namespaced_deployment(
             name = name, 
             namespace = namespace, 
-            body = self.deploymentObj
+            body = response
         )
-
+        return True
         # print("\n[INFO] deployment's container replicas updated.\n")
 
-    def deleteDeployment(self,name,namespace):
+    @_errorHandler
+    def deleteDeployment(self,name,namespace) -> bool:
         resp = self.k8s_apps_v1.delete_namespaced_deployment(
             name = name,
             namespace = namespace,
@@ -200,6 +232,7 @@ class Kube():
                 grace_period_seconds = 5
             ),
         )
+        return True
         # print("\n[INFO] deployment deleted.")
 
     # def create_pod(self):
@@ -233,16 +266,27 @@ class Kube():
 
 
 if __name__ == '__main__':
-    k = Kube()
-    # k.listPods()
-    # k.createDeployment("mydep123","default","nginx","nginx:1.16.0",1)
+    from time import sleep
+    k = Kube("config.yaml")
+    # print(k.getDeploymentInfo('updated'))
+    # k.updateDeploymentReplicas('updated', -2)
+    # print(k.getReplicaNumber('updated', 'default'))
+    # print(k.getDeploymentInfo('updated'))
+    # print(k.createDeployment('updated', 'updated', 'shriramashagri/backend-flask:version1'))
+    # sleep(15)
+    # bp = k.updateDeploymentImage('updated', 'shriramashagri/backend-flask:version2')
+    # print(k.listPods())
+    # k.deleteDeployment('updated', 'default')
+    
+#     print(bp)
+    # k.createDeployment("mydep1","mycontainer","nginx:1.16.0",3,"default")
     # print(k.deploymentObj);
     # k.deleteDeployment("mydep1","default")
-    k.listAllDeployments()
-    # k.updateDeploymentImage("mydep1","default","nginx:1.16.0")
+    # print(k.listAllDeployments())
+    # k.updateDeploymentImage("mydep1","nginx:1.15.0","default")
+    # k.updateDeploymentReplicas("mydep1","default",-2)
     # k.updateDeploymentReplicas("mydep1","default",2)
-    # k.updateDeploymentReplicas("mydep1","default",-1)
-    # k.getDeploymentInfo("mydep1","default");
-    # k.getReplicaNumber("mydep1","default")
+    # print(k.getDeploymentInfo("test-deploy","default"))
+    # print(k.getReplicaNumber("test-deploy","default"))
     
     

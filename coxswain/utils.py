@@ -2,6 +2,7 @@ from enum import Enum
 from typing import Union, Tuple, Any, Callable, TypeVar
 from functools import wraps
 from flask import jsonify
+
 import logging
 import traceback
 
@@ -14,11 +15,11 @@ class status(tuple, Enum):
     """
     values of format (status string, custom status code, http status code)
     """
-    success = "SUCCESS", 1000, 200
-    failure = "FAILURE", 1005, 200
-    invalid = "INVALID", 1100, 500
-    unauth = 'NOT AUTHORISED', 1400, 403
-    error = "ERROR", 1500, 500
+    success = "SUCCESS", 200
+    failure = "FAILURE", 200
+    invalid = "INVALID", 500
+    unauth = 'NOT AUTHORISED', 403
+    error = "ERROR", 500
 
 class Response:
     @staticmethod
@@ -27,10 +28,9 @@ class Response:
         {
             'result' : "RESULT", 
             'status' : "STATUS" 
-            'status_code' : 1111
         }
         '''
-        return jsonify({'result' : result, 'status' : status[0]}), status[2]
+        return jsonify({'result' : result, 'status' : status[0]}), status[1]
 
 class Utils:
     '''

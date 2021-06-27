@@ -314,3 +314,6 @@ modules.xml
 # Ignore all local history of files
 .history
 .ionide
+
+*.yaml
+test.md
