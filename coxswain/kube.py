@@ -2,28 +2,20 @@ from kubernetes import client, config
 import yaml
 
 class Kube():
-    deploymentObj = None
-    def __init__(self) -> None:
-        config.load_kube_config()
+    
+    def __init__(self,file) -> None:
+        config.load_kube_config(config_file=file)
         self.v1 = client.CoreV1Api()
         self.k8s_apps_v1 = client.AppsV1Api()
-        
-    
-    def listPods(self):
-        print("Listing pods with their IPs:")
-        ret = self.v1.list_pod_for_all_namespaces(watch=False)
-        for i in ret.items:
-            # spec.nodeName - the node's name
-            print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
+        self.deploymentObj = None
 
-
-    def create_deployment_object(self,deployment_name,conatiner_name,conatiner_image,replicas):
+    def createDeploymentObject(self,deploymentName,conatinerName,conatinerImage,Replicas):
         # Configureate Pod template container
         container = client.V1Container(
             # name="nginx",
-            name=conatiner_name,
+            name=conatinerName,
             # image="nginx:1.15.4",
-            image=conatiner_image,
+            image=conatinerImage,
             ports=[client.V1ContainerPort(container_port=80)],
             resources=client.V1ResourceRequirements(
                 requests={"cpu": "100m", "memory": "200Mi"},
@@ -33,7 +25,7 @@ class Kube():
 
         # Create and configurate a spec section
         template = client.V1PodTemplateSpec(
-            metadata=client.V1ObjectMeta(labels={"app": "nginx"}),
+            metadata=client.V1ObjectMeta(labels={"app": conatinerName}),
             spec=client.V1PodSpec(containers=[container]),
         )
 
@@ -41,24 +33,24 @@ class Kube():
         spec = client.V1DeploymentSpec(
             replicas=replicas, template=template, selector={
                 "matchLabels":
-                {"app": "nginx"}})
+                {"app": conatinerName}})
 
         # Instantiate the deployment object
         deployment = client.V1Deployment(
             api_version="apps/v1",
             kind="Deployment",
-            metadata=client.V1ObjectMeta(name=deployment_name),
+            metadata=client.V1ObjectMeta(name=deploymentName),
             spec=spec,
         )
 
         return deployment
 
-    def create_deployment(self):
+    def createDeployment(self,deploymentName,deploymentNameSpace,conatinerName,conatinerImage,Replicas):
         # Create deployement
-        deployment = self.create_deployment_object("mydep2","nginx", "nginx:1.15.4", 2)
+        self.deploymentObj = self.createDeploymentObject(deploymentName,conatinerName,conatinerImage,Replicas)
 
         resp = self.k8s_apps_v1.create_namespaced_deployment(
-            body=deployment, namespace="default"
+            body=self.deploymentObj, namespace=deploymentNameSpace
         )
 
         print("\n[INFO] deployment `nginx-deployment` created.\n")
@@ -72,6 +64,14 @@ class Kube():
                 resp.spec.template.spec.containers[0].image,
             )
         )
+    
+    def listPods(self):
+        print("Listing pods with their IPs:")
+        ret = self.v1.list_pod_for_all_namespaces(watch=False)
+        for i in ret.items:
+            # spec.nodeName - the node's name
+            print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
+
 
     def list_all_deployments(self):
         print("Listing all deployments:")
@@ -123,42 +123,43 @@ class Kube():
         )
         print("\n[INFO] deployment deleted.")
 
-    def create_pod(self):
-        pod=client.V1Pod()
-        spec=client.V1PodSpec()
-        pod.metadata=client.V1ObjectMeta(name="busybox")
-        container=client.V1Container()
-        container.image="busybox"
-        container.args=["sleep", "3600"]
-        container.name="busybox"    
-        spec.containers = [container]
-        pod.spec = spec
-        self.v1.create_namespaced_pod(namespace="default",body=pod)
-        print("Pod created.")
+    # def create_pod(self):
+    #     pod=client.V1Pod()
+    #     spec=client.V1PodSpec()
+    #     pod.metadata=client.V1ObjectMeta(name="busybox")
+    #     container=client.V1Container()
+    #     container.image="busybox"
+    #     container.args=["sleep", "3600"]
+    #     container.name="busybox"    
+    #     spec.containers = [container]
+    #     pod.spec = spec
+    #     self.v1.create_namespaced_pod(namespace="default",body=pod)
+    #     print("Pod created.")
 
-    def display_pods_of_node(self,node_name):
-        print("Listing pods with their IPs on node: ", node_name)
-        field_selector = 'spec.nodeName='+node_name
-        ret = self.v1.list_pod_for_all_namespaces(watch=False, field_selector=field_selector)
-        for i in ret.items:
-            print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
+    # def display_pods_of_node(self,node_name):
+    #     print("Listing pods with their IPs on node: ", node_name)
+    #     field_selector = 'spec.nodeName='+node_name
+    #     ret = self.v1.list_pod_for_all_namespaces(watch=False, field_selector=field_selector)
+    #     for i in ret.items:
+    #         print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
 
-    def display_pods_log(self,name,namespace):    
-        res = self.v1.read_namespaced_pod_log(name=name, namespace=namespace)
-        print(res)
+    # def display_pods_log(self,name,namespace):    
+    #     res = self.v1.read_namespaced_pod_log(name=name, namespace=namespace)
+    #     print(res)
 
-    def delete_pod(self,name,namespace):
-        self.v1.delete_namespaced_pod(name=name, namespace=namespace, body=client.V1DeleteOptions())
-        print("Pod deleted.")
+    # def delete_pod(self,name,namespace):
+    #     self.v1.delete_namespaced_pod(name=name, namespace=namespace, body=client.V1DeleteOptions())
+    #     print("Pod deleted.")
 
 
 
 if __name__ == '__main__':
-    k = Kube()
-    k.listPods()
-    # k.create_deployment()
+    k = Kube("config.yaml")
+    # k.listPods()
+    k.createDeployment("mydep1","default","nginx","nginx:1.16.0",1)
+    print(k.deploymentObj);
     # k.delete_deployment("mydep1","default")
-    k.list_all_deployments()
+    # k.list_all_deployments()
     # k.update_deployment_image("mydep1","default","nginx:1.16.0",1)
     
     
