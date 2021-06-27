@@ -3,13 +3,13 @@ import yaml
 
 class Kube():
     
-    def __init__(self,file) -> None:
-        config.load_kube_config(config_file=file)
+    def __init__(self) -> None:
+        config.load_kube_config()
         self.v1 = client.CoreV1Api()
         self.k8s_apps_v1 = client.AppsV1Api()
         self.deploymentObj = None
 
-    def createDeploymentObject(self,deploymentName,conatinerName,conatinerImage,Replicas):
+    def createDeploymentObject(self,deploymentName,conatinerName,conatinerImage,replicas):
         # Configureate Pod template container
         container = client.V1Container(
             # name="nginx",
@@ -64,6 +64,10 @@ class Kube():
                 resp.spec.template.spec.containers[0].image,
             )
         )
+
+    def getDeployment(self,name,namespace):
+        self.deploymentObj = self.k8s_apps_v1.read_namespaced_deployment(name, namespace, pretty=pretty, exact=exact, export=export)
+        print(self.deploymentObj)
     
     def listPods(self):
         print("Listing pods with their IPs:")
@@ -113,7 +117,7 @@ class Kube():
             )
         )
 
-    def delete_deployment(self,name,namespace):
+    def deleteDeployment(self,name,namespace):
         resp = self.k8s_apps_v1.delete_namespaced_deployment(
             name=name,
             namespace=namespace,
@@ -154,11 +158,11 @@ class Kube():
 
 
 if __name__ == '__main__':
-    k = Kube("config.yaml")
-    # k.listPods()
-    k.createDeployment("mydep1","default","nginx","nginx:1.16.0",1)
-    print(k.deploymentObj);
-    # k.delete_deployment("mydep1","default")
+    k = Kube()
+    k.listPods()
+    # k.createDeployment("mydep123","default","nginx","nginx:1.16.0",1)
+    # print(k.deploymentObj);
+    # k.deleteDeployment("mydep1","default")
     # k.list_all_deployments()
     # k.update_deployment_image("mydep1","default","nginx:1.16.0",1)
     
