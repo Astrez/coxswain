@@ -35,16 +35,19 @@ def login_required(f):
     return decorated_function
 
 @app.route('/dashboard', methods = ["GET"])
+@login_required
 def dashboard():
     if (result := kubeConnection.listPods(sendall=True)):
         return render_template("dashboard.html", data = result)
     return render_template("dashboard.html", data = None)
 
 @app.route('/deployment/create', methods = ["GET"])
+@login_required
 def deploymentUpdateGet():
     return render_template("create.html")
 
 @app.route('/deployment/create', methods = ["POST"])
+@login_required
 def createDeployment():
     '''
     Ceate new deployment
@@ -68,6 +71,7 @@ def createDeployment():
 
 
 @app.route('/deployment/imageupdate', methods = ["POST"])
+@login_required
 def updateImage():
     body = request.form.to_dict()
     if (result := kubeConnection.updateDeploymentImage(NAME, body.get('image'))):
@@ -76,6 +80,7 @@ def updateImage():
     return Response.responseFormat("", status.failure)
 
 @app.route('/deployment/details', methods = ["GET"])
+@login_required
 @login_required
 def getDeploymentDetails():
     '''
@@ -87,6 +92,7 @@ def getDeploymentDetails():
     return render_template("update.html", deployment=None)
 
 # @app.route('/deployment/replicas', methods = ["POST"])
+# @login_required
 # def replicas():
 #     '''
 #     Number of active replicas
@@ -98,6 +104,7 @@ def getDeploymentDetails():
 
 
 @app.route('/deployment/scale', methods = ["GET"])
+@login_required
 def scaleGet():
     if (result := kubeConnection.getReplicaNumber(NAME)):
         return render_template("scale.html", replicas = result)
@@ -106,6 +113,7 @@ def scaleGet():
 
 
 @app.route('/deployment/scale', methods = ["POST"])
+@login_required
 def scale():
 
     body = request.form.to_dict()
@@ -114,29 +122,29 @@ def scale():
     return redirect('/deployment/scale')
 
 
-# @app.route('/autoscaler/on', methods = ["GET"])
-# def startAutoScaler():
-#     '''
-#     Start Autoscaler
-#     '''
-#     thread = Thread(target = autoscaler, args = (Scaler(model, kubeConnection), 5))
-#     thread.start()
-#     return Response.responseFormat("", status.success)
+@app.route('/autoscaler/on', methods = ["GET"])
+def startAutoScaler():
+    '''
+    Start Autoscaler
+    '''
+    thread = Thread(target = autoscaler, args = (Scaler(model, kubeConnection), 5))
+    thread.start()
+    return Response.responseFormat("", status.success)
 
-# @app.route('/autoscaler/off', methods = ["GET"])
-# def stopAutoScaler():
-#     '''
-#     Stop autoscaler
-#     '''
-#     model.endScaler()
-#     return Response.responseFormat("", status.success)
+@app.route('/autoscaler/off', methods = ["GET"])
+def stopAutoScaler():
+    '''
+    Stop autoscaler
+    '''
+    model.endScaler()
+    return Response.responseFormat("", status.success)
 
 # _______________________________AUTH_____________________________________
 # Signin route
 
 @app.route('/auth/signin', methods = ["GET"])
 def getSignin():
-    return render_template('signin.html')
+    return render_template('login.html')
 
 @app.route('/auth/signin', methods = ["POST"])
 def signin():
@@ -147,8 +155,8 @@ def signin():
         if type(token) == bytes:
             token.decode("utf-8")
         session['username'] = 'exists'    
-        return "Hello World"
-    return Response.responseFormat("", status.unauth)
+        return redirect("/dashboard")
+    return redirect("/auth/signin")
 
 
 @app.route('/auth/signup', methods = ["GET"])

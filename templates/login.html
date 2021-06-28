@@ -9,11 +9,11 @@
 </head>
 <body>
   <div class="login-wrapper">
-  <h1>Sign Up</h1>
+  <h1>Please Log In</h1>
   
     <div class="formdiv">
       <center>
-      <form action="/auth/signup" method="POST">
+      <form action="/auth/signin" method="POST">
         <label>
           <p class="usrn">Username</p>
           <input type="text" name="username" class="textfieldnme"/>
@@ -23,9 +23,12 @@
           <input type="password" name="password" class="textfieldnme"/>
         </label>
         <div>
-          <button type="submit" class="subbmitbtn" value="Submit">Sign Up</button>
+          <button type="submit" class="subbmitbtn" value="Submit">Submit</button>
         </div>
       </form>
+      <p>
+        <a href="/auth/signup">Sign up</a>
+      </p>
     </center>
     </div>
 </div>
