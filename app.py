@@ -36,13 +36,9 @@ def login_required(f):
 
 @app.route('/dashboard', methods = ["GET"])
 def dashboard():
-    '''
-    Dashboard route
-    '''
-    # get details of pods and other specs from the server
     if (result := kubeConnection.listPods(sendall=True)):
-        return Response.responseFormat(result, status.success)
-    return Response.responseFormat("", status.failure)
+        return render_template("dashboard.html", data = result)
+    return render_template("dashboard.html", data = None)
 
 @app.route('/deployment/create', methods = ["GET"])
 def deploymentUpdateGet():
@@ -62,8 +58,11 @@ def createDeployment():
     body = request.form.to_dict()
     NAME = body.get('deploymentName')
     try:
-        kubeConnection.createDeployment(body.get('deploymentName'), body.get('containerName'), body.get('containerImage'))
-        return "hello world"
+        result = kubeConnection.createDeployment(body.get('deploymentName'), body.get('containerName'), body.get('containerImage'), Replicas=int(body.get('replica')))
+        if result:
+
+            return redirect("/dashboard")
+        return redirect("/deployment/create")
     except Exception as e:
         return Response.responseFormat("", status.error)
 
@@ -82,20 +81,20 @@ def getDeploymentDetails():
     '''
     deployment details
     '''
-    body = "fancy-pants"
+    body = NAME
     if (result := kubeConnection.getDeploymentInfo(body)):
         return render_template("update.html", deployment=result)
     return render_template("update.html", deployment=None)
 
-@app.route('/deployment/replicas', methods = ["POST"])
-def replicas():
-    '''
-    Number of active replicas
-    '''
-    body = request.get_json()
-    if (result := kubeConnection.getReplicaNumber(NAME)):
-        return Response.responseFormat(result, status.success)
-    return Response.responseFormat("", status.failure)
+# @app.route('/deployment/replicas', methods = ["POST"])
+# def replicas():
+#     '''
+#     Number of active replicas
+#     '''
+#     body = request.get_json()
+#     if (result := kubeConnection.getReplicaNumber(NAME)):
+#         return Response.responseFormat(result, status.success)
+#     return Response.responseFormat("", status.failure)
 
 
 @app.route('/deployment/scale', methods = ["GET"])
@@ -115,37 +114,22 @@ def scale():
     return redirect('/deployment/scale')
 
 
-@app.route('/autoscaler/on', methods = ["GET"])
-def startAutoScaler():
-    '''
-    Start Autoscaler
-    '''
-    thread = Thread(target = autoscaler, args = (Scaler(model, kubeConnection), 5))
-    thread.start()
-    return Response.responseFormat("", status.success)
+# @app.route('/autoscaler/on', methods = ["GET"])
+# def startAutoScaler():
+#     '''
+#     Start Autoscaler
+#     '''
+#     thread = Thread(target = autoscaler, args = (Scaler(model, kubeConnection), 5))
+#     thread.start()
+#     return Response.responseFormat("", status.success)
 
-@app.route('/autoscaler/off', methods = ["GET"])
-def stopAutoScaler():
-    '''
-    Stop autoscaler
-    '''
-    model.endScaler()
-    return Response.responseFormat("", status.success)
-
-@app.route('/deployment/create', methods = ["GET"])
-def createDeploymentGet():
-    return render_template("deployment.html")
-
-
-
-
-
-
-
-
-
-
-
+# @app.route('/autoscaler/off', methods = ["GET"])
+# def stopAutoScaler():
+#     '''
+#     Stop autoscaler
+#     '''
+#     model.endScaler()
+#     return Response.responseFormat("", status.success)
 
 # _______________________________AUTH_____________________________________
 # Signin route

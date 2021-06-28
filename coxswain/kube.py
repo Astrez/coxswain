@@ -104,6 +104,10 @@ class Kube():
     @_errorHandler
     def createDeployment(self,deploymentName : str, conatinerName : str, conatinerImage : str, Replicas : int = 1, deploymentNameSpace : str = 'default') -> bool:
         # Create deployement
+        if Replicas > 5:
+            Replicas = 5
+        elif Replicas < 1:
+            Replicas = 1
         self.deploymentObj = self._createDeploymentObject(deploymentName, conatinerName, conatinerImage, Replicas)
 
         resp = self.k8s_apps_v1.create_namespaced_deployment(

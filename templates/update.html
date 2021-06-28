@@ -8,6 +8,13 @@
     <title>Update</title>
 </head>
 <body>
+  <ul>
+    <li> <a href="/dashboard">Pods</a></li>
+     <li><a href="#">Update</a></li>
+     <li><a href="/deployment/scale">Scale</a></li>
+     <!-- <div class="dot"></div></ul> -->
+  <!-- </nav>  -->
+ </ul>
   <center> <h1>Deployment Details</h1>
   <!-- {% for key, value in deployment.items() %}
         {{ key }} : {{ value }} <br>
@@ -53,6 +60,14 @@
            </td>
            <td>
             {{ deployment['numberOfContainers'] }}
+           </td>
+        </tr>
+        <tr>
+          <td>
+            Replicas
+           </td>
+           <td>
+            {{ deployment['replicas'] }}
            </td>
         </tr>
         <tr>

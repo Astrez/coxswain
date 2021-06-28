@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='dashboard.css') }}">
+    <title>Kubernetes Client</title>
+</head>
+<body>
+<!--i am not using nav bar here i will do it for react-->
+      <!-- <nav class="navMenu"> -->
+        <ul>
+       <li> <a href="#">Pods</a></li>
+        <li><a href="/deployment/details">Update</a></li>
+        <li><a href="/deployment/scale">Scale</a></li>
+        <!-- <div class="dot"></div></ul> -->
+     <!-- </nav>  -->
+    </ul>
+    <center><h1>Pod details</h2></center>
+
+      <div class="poddata">
+        <table><thead>
+          <th>Pod Name</th>
+          <th>Namespace</th>
+          <th>Pod Cluster IP</th>
+          <th>Number of Containers</th>
+          <th>Container Image</th>
+          <th>Container Name</th>
+          <th>Status</th>
+        </thead>
+        <tbody>
+          {% for d in data %}
+          <tr>
+            <td>{{ d['podName'] }}</td>
+            <td>{{ d['namespace'] }}</td>
+            <td>{{ d['podIP'] }}</td>
+            <td>{{ d['numberOfContainers'] }}</td>
+            <td>{{ d['containerName'] }}</td>
+            <td>{{ d['containerImage'] }}</td>
+            <td>{{ d['status'] }}</td>
+          </tr>
+        
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+      <!-- <div class="wrapper">
+  <div class="cards_wrap">
+    <div class="card_item">
+      <div class="card_inner">
+        <div class="card_top">
+        <a href='podhealth.html'><img src="podhealth.jpg" alt="car" /></a>
+        </div>
+        <div class="card_bottom">
+          <div class="card_category">
+            pod health
+          </div>
+          <div class="card_info">
+            <p class="title">pod health</p>
+            <p>
+              Anything Related To Pod Kubernetes
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card_item">
+      <div class="card_inner">
+        <div class="card_top">
+         <a href='update.html'> <img src="docker.jpg" alt="car" /></a>
+        </div>
+        <div class="card_bottom">
+          <div class="card_category">
+            UPDATE PROGRESS
+          </div>
+          <div class="card_info">
+            <p class="title">Any Change in Website Please make sure to visit here</p>
+            <p>
+              We Update the Website, that is Compatible to any version
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div className="card_item">
+      <div className="card_inner">
+        <div className="card_top">
+          <a href="scaling"><img src="scale.jpg" alt="car" /></a>
+        </div>
+        <div className="card_bottom">
+          <div className="card_category">
+            SCALING COMPONENTS
+          </div>
+          <div className="card_info">
+            <p className="title">Check For The Scaling components</p>
+            <p>
+              The Number of Scaling component including whether it should be downscaled or upscaled or cooler option of auto scaling
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> -->
+</body>
+</html>

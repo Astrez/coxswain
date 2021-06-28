@@ -13,12 +13,24 @@
         <div class="label">
         <form action="/deployment/create" method="POST">
         <label class="txtfield">
-        <b>Deployment Name :</b>
-        <input type="text" class="textfieldnme" name="deploymentName" /><br>
-        <b>Container Name :</b>
+        <div class="fields">
+            <b>Deployment Name :</b>
+            <input type="text" class="textfieldnme" name="deploymentName" /><br>
+        </div>
+        <div class="fields">
+            <b>Container Name :</b>
         <input type="text" class="textfieldnme" name="containerName" /><br>
-        <b>Container Image :</b>
-        <input type="text" class="textfieldnme" name="containerImage" /><br>
+        </div>
+        <div class="fields">
+            <b>Container Image :</b>
+            <input type="text" class="textfieldnme" name="containerImage" /><br>
+        </div>
+        
+        <div class="fields">
+            <b>Replicas :</b>
+            <input type="number" class="textfieldnme" name="replica" /><br>
+        </div>
+
         </label>
     <input type="submit" class="subbmitbtn" value="Submit"/>
   </form>
