@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kubernetes Client</title>
+  <link rel=stylesheet type=text/css href="{{ url_for('static', filename='signin.css') }}">
+</head>
+<body>
+  <img class="wave" src="{{ url_for('static', filename='svg.png') }}"></img>
+  <div class="container">
+      <div class="img">
+          <img src="{{ url_for('static', filename='bg.svg') }}"></img>
+      </div>
+      <div class="login-content">
+          <form action="/auth/signup" method="POST">
+              <img src="{{ url_for('static', filename='avatar2.png') }}" class="ava"></img>
+              <h2 class="title">Welcome</h2>
+              <div class="input-div one">
+                  <div class="i">
+                      <i class="fas fa-user"></i>
+                  </div>
+                  <div class="div">
+                      <input type="text" name="username" class="input" placeholder="Username"></input>
+                  </div>
+              </div>
+              <div class="input-div pass">
+                  <div class="i">
+                      <i class="fas fa-lock"></i>
+                  </div>
+                  <div class="div">
+                      <input type="password" name="password" class="input" placeholder="Password"></input>
+                  </div>
+              </div>
+              <input type="submit" class="btn" value="Sign Up"></input>
+          </form>
+      </div>
+  </div>
+</body>
+</html>

@@ -1,14 +1,16 @@
 from coxswain import *
 
-from flask import Flask, request
+from flask import Flask, redirect, url_for, render_template, request, flash
 from flask_cors import CORS
 from datetime import datetime
 from threading import Thread
 
 import logging
 import jwt
+import os
 
 app = Flask(__name__)
+
 # Logging class init
 LogSetup(app)
 
@@ -19,9 +21,9 @@ kubeConnection = Kube("config.yaml")
 # Logger
 Logger = logging.getLogger("app.access")
 
-@app.route('/', methods = ["GET"])
-def hello():
-    return "Hello World", 200
+@app.route('/auth/signup', methods = ["GET"])
+def getSignin():
+    return render_template('signin.html')
 
 
 @app.route('/dashboard', methods = ["GET"])
@@ -117,6 +119,10 @@ def createDeployment():
     except Exception as e:
         return Response.responseFormat("", status.error)
 
+@app.route('/deployment/create', methods = ["GET"])
+def createDeploymentGet():
+    return "Hello World"
+
 # _______________________________AUTH_____________________________________
 # Signin route
 @app.route('/auth/signin', methods = ["POST"])
@@ -133,13 +139,14 @@ def signin():
 
 @app.route('/auth/signup', methods = ["POST"])
 def signup():
-    body = request.get_json()
-    if model.newUser(body.get('username'), body.get('password')):
-        token = {"username" : body.get("username")}
-        token = jwt.encode(token, key= "SECRET KEY", algorithm="HS256")
-        if type(token) == bytes:
-            token.decode("utf-8")
-        return Response.responseFormat(token, status.success)
+    body = request.form.to_dict()
+    if body.get('username') != "" or body.get('password') != "":
+        if model.newUser(body.get('username'), body.get('password')):
+            token = {"username" : body.get("username")}
+            token = jwt.encode(token, key= "SECRET KEY", algorithm="HS256")
+            if type(token) == bytes:
+                token.decode("utf-8")
+            return redirect("/deployment/create")
     return Response.responseFormat("Database Error: User already exists", status.error)
 
 
