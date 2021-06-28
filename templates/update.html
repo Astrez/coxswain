@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type=text/css href="{{ url_for('static', filename='update.css') }}">
+    <title>Update</title>
+</head>
+<body>
+  <center> <h1>Deployment Details</h1>
+  <!-- {% for key, value in deployment.items() %}
+        {{ key }} : {{ value }} <br>
+    {% endfor %} -->
+    <br>
+    <table>
+      <thead>
+        <th>
+          Property
+        </th>
+        <th>
+          Value
+        </th>
+      </thead>
+      <tbody>
+        <tr>
+           <td>
+            Deployment Name
+           </td>
+           <td>
+            {{ deployment['name'] }}
+           </td>
+        </tr>
+        <tr>
+          <td>
+            Namespace
+           </td>
+           <td>
+            {{ deployment['namespace'] }}
+           </td>
+        </tr>
+        <tr>
+          <td>
+            Number of revisions on the deployment
+           </td>
+           <td>
+            {{ deployment['revision'] }}
+           </td>
+        </tr>
+        <tr>
+          <td>
+            Number of containers in each pod
+           </td>
+           <td>
+            {{ deployment['numberOfContainers'] }}
+           </td>
+        </tr>
+        <tr>
+          <td>
+            Container Name
+          </td>
+          <td>
+            {{ deployment['containerName'] }}
+          </td>
+       </tr>
+       <tr>
+        <td>
+          Image name
+        </td>
+        <td>
+          {{ deployment['containerImage'] }}
+        </td>
+     </tr>
+      </tbody>
+    </table>
+     <!-- <br>
+    Namespace : {{ deployment['namespace'] }} <br>
+    Number of revisions on the deployment : {{ deployment['revision'] }} <br>
+    Number of containers in each pod : {{ deployment['numberOfContainers'] }} <br>
+    Container Name : {{ deployment['containerName'] }} <br>
+    Image name : {{ deployment['containerImage'] }} <br> -->
+  </center>
+    <center> <h1>Update Deployment</h1>
+        
+      <div class="label">
+      <form action="/deployment/imageupdate" method="POST">
+      <label class="txtfield">
+      <b>ENTER THE IMAGE TO UPDATE :</b>     
+      <input type="text" class="textfieldnme" name="image" />
+      </label>
+  <input type="submit" class="subbmitbtn" value="Submit"  />
+</form>
+</center>
+</div>
+</body>
+</html>
+

@@ -1,15 +1,18 @@
 from coxswain import *
 
-from flask import Flask, redirect, url_for, render_template, request, flash
+from flask import Flask, redirect, url_for, render_template, request, flash, session
 from flask_cors import CORS
 from datetime import datetime
 from threading import Thread
+from functools import wraps
 
 import logging
 import jwt
-import os
+
+NAME = "fancy-pants"
 
 app = Flask(__name__)
+app.secret_key = 'any random string'
 
 # Logging class init
 LogSetup(app)
@@ -18,13 +21,18 @@ model = Database()
 CORS(app)
 kubeConnection = Kube("config.yaml")
 
+
 # Logger
 Logger = logging.getLogger("app.access")
 
-@app.route('/auth/signup', methods = ["GET"])
-def getSignin():
-    return render_template('signin.html')
-
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        user = dict(session).get('username', None)
+        if user:
+            return f(*args, **kwargs)
+        return redirect('/auth/signin')
+    return decorated_function
 
 @app.route('/dashboard', methods = ["GET"])
 def dashboard():
@@ -36,29 +44,48 @@ def dashboard():
         return Response.responseFormat(result, status.success)
     return Response.responseFormat("", status.failure)
 
-@app.route('/deployment/imageupdate', methods = ["POST"])
-def updateImage():
+@app.route('/deployment/create', methods = ["GET"])
+def deploymentUpdateGet():
+    return render_template("create.html")
+
+@app.route('/deployment/create', methods = ["POST"])
+def createDeployment():
     '''
-    update image
+    Ceate new deployment
     {
-        "name" : "deployment name",
-        "image" : "image name"
+        "deploymentName" : "name",
+        "containerName" : "container name",
+        "containerImage" : "image name from dockerhub"
     }
     '''
-    body = request.get_json()
-    if (result := kubeConnection.updateDeploymentImage(body.get('name'), body.get('image'))):
-        return Response.responseFormat(result, status.success)
+    global NAME
+    body = request.form.to_dict()
+    NAME = body.get('deploymentName')
+    try:
+        kubeConnection.createDeployment(body.get('deploymentName'), body.get('containerName'), body.get('containerImage'))
+        return "hello world"
+    except Exception as e:
+        return Response.responseFormat("", status.error)
+
+
+@app.route('/deployment/imageupdate', methods = ["POST"])
+def updateImage():
+    body = request.form.to_dict()
+    if (result := kubeConnection.updateDeploymentImage(NAME, body.get('image'))):
+        # redirect to dashboard
+        return redirect("/deployment/details")
     return Response.responseFormat("", status.failure)
 
-@app.route('/deployment/details', methods = ["POST"])
+@app.route('/deployment/details', methods = ["GET"])
+@login_required
 def getDeploymentDetails():
     '''
     deployment details
     '''
-    body = request.get_json()
-    if (result := kubeConnection.getDeploymentInfo(body.get('name'))):
-        return Response.responseFormat(result, status.success)
-    return Response.responseFormat("", status.failure)
+    body = "fancy-pants"
+    if (result := kubeConnection.getDeploymentInfo(body)):
+        return render_template("update.html", deployment=result)
+    return render_template("update.html", deployment=None)
 
 @app.route('/deployment/replicas', methods = ["POST"])
 def replicas():
@@ -66,23 +93,26 @@ def replicas():
     Number of active replicas
     '''
     body = request.get_json()
-    if (result := kubeConnection.getReplicaNumber(body.get('name'))):
+    if (result := kubeConnection.getReplicaNumber(NAME)):
         return Response.responseFormat(result, status.success)
     return Response.responseFormat("", status.failure)
 
+
+@app.route('/deployment/scale', methods = ["GET"])
+def scaleGet():
+    if (result := kubeConnection.getReplicaNumber(NAME)):
+        return render_template("scale.html", replicas = result)
+    return render_template("scale.html", replicas = None)
+    
+
+
 @app.route('/deployment/scale', methods = ["POST"])
 def scale():
-    '''
-    up/down scale
-    {
-        "name" : "deployment name",
-        "factor" : -5 to 5
-    }
-    '''
-    body = request.get_json()
-    if (result := kubeConnection.updateDeploymentReplicas(body.get('name'), body.get('factor'))):
-        return Response.responseFormat(result, status.success)
-    return Response.responseFormat("", status.failure)
+
+    body = request.form.to_dict()
+    if (result := kubeConnection.updateDeploymentReplicas(NAME, int(body.get('factor')))):
+        return redirect('/deployment/scale')
+    return redirect('/deployment/scale')
 
 
 @app.route('/autoscaler/on', methods = ["GET"])
@@ -102,40 +132,44 @@ def stopAutoScaler():
     model.endScaler()
     return Response.responseFormat("", status.success)
 
-@app.route('/deployment/create', methods = ["POST"])
-def createDeployment():
-    '''
-    Ceate new deployment
-    {
-        "deploymentName" : "name",
-        "containerName" : "container name",
-        "containerImage" : "image name from dockerhub"
-    }
-    '''
-    body = request.get_json()
-    try:
-        kubeConnection.createDeployment(body.get('deploymentName'), body.get('containerName'), body.get('containerImage'))
-        return Response.responseFormat("", status.success)
-    except Exception as e:
-        return Response.responseFormat("", status.error)
-
 @app.route('/deployment/create', methods = ["GET"])
 def createDeploymentGet():
-    return "Hello World"
+    return render_template("deployment.html")
+
+
+
+
+
+
+
+
+
+
+
 
 # _______________________________AUTH_____________________________________
 # Signin route
+
+@app.route('/auth/signin', methods = ["GET"])
+def getSignin():
+    return render_template('signin.html')
+
 @app.route('/auth/signin', methods = ["POST"])
 def signin():
-    body = request.get_json()
+    body = request.form.to_dict()
     if model.compare(body):
         token = {"username" : body.get("username")}
         token = jwt.encode(token, key= "SECRET KEY", algorithm="HS256")
         if type(token) == bytes:
             token.decode("utf-8")
-        return Response.responseFormat(token, status.success)
+        session['username'] = 'exists'    
+        return "Hello World"
     return Response.responseFormat("", status.unauth)
 
+
+@app.route('/auth/signup', methods = ["GET"])
+def getSignup():
+    return render_template('signup.html')
 
 @app.route('/auth/signup', methods = ["POST"])
 def signup():

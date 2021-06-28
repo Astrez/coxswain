@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type=text/css href="{{ url_for('static', filename='update.css') }}">
+    <title>Document</title>
+</head>
+<body>
+    <center> <h1>Create Deployment</h1>
+        
+        <div class="label">
+        <form action="/deployment/create" method="POST">
+        <label class="txtfield">
+        <b>Deployment Name :</b>
+        <input type="text" class="textfieldnme" name="deploymentName" /><br>
+        <b>Container Name :</b>
+        <input type="text" class="textfieldnme" name="containerName" /><br>
+        <b>Container Image :</b>
+        <input type="text" class="textfieldnme" name="containerImage" /><br>
+        </label>
+    <input type="submit" class="subbmitbtn" value="Submit"/>
+  </form>
+  </center>
+</body>
+</html>

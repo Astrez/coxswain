@@ -215,6 +215,10 @@ class Kube():
         # Update container image
         response = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
         response.spec.replicas  += replicas
+        if response.spec.replicas > 5:
+            response.spec.replicas = 5
+        elif response.spec.replicas < 1:
+            response.spec.replicas = 1
         # self.deploymentObj.spec.replicas  += replicas
         # deployment.spec.replicas = replicas
 
