@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Kubernetes Client</title>
+  <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel=stylesheet type=text/css href="{{ url_for('static', filename='css/overrides.css') }}">
+</head>
+<body>
+    <div class="notice-wrapper">
+      {% with messages = get_flashed_messages() %}
+        {% for message in messages %}
+          <div class="show notice error notice-error">
+            <span class="notice-message">{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+  </header>
+
+
+  {% block content %}{% endblock %}
+  <script src="{{ url_for('static', filename='javascript/demo.js') }}"></script>
+</body>
+</html>
