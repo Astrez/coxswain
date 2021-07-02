@@ -62,10 +62,11 @@ class Database():
 
     @_errorHandler
     def setReplicas(self, count : int) -> None:
-        if count > 0:
-            self.__redis.incrby("scaler", count)
-        else:
-            self.__redis.decrby("scaler", abs(count))
+        # if count > 0:
+        #     self.__redis.incrby("scaler", count)
+        # else:
+        #     self.__redis.decrby("scaler", abs(count))
+        self.__redis.set("scaler", abs(count))
 
 
     @_errorHandler

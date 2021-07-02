@@ -104,6 +104,11 @@ def stopAutoScaler():
 def createDeployment():
     '''
     Ceate new deployment
+    {
+        "deploymentName" : "name",
+        "containerName" : "container name",
+        "containerImage" : "image name from dockerhub"
+    }
     '''
     body = request.get_json()
     try:

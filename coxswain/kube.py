@@ -20,7 +20,7 @@ class Kube():
                 return None
         return wrapper
     
-    def __init__(self, configFile : str) -> None:
+    def __init__(self, configFile : str = None) -> None:
         config.load_kube_config(config_file=configFile)
         self.v1 = client.CoreV1Api()
         self.k8s_apps_v1 = client.AppsV1Api()
@@ -73,7 +73,7 @@ class Kube():
 
         return deployment
     
-    def _createLoadBalancer(self, deploymentName : str, containerName : str):
+    def _createLoadBalancer(self, deploymentName : str):
         
         ports = client.V1ServicePort(
             # protocol="TCP",
@@ -110,6 +110,12 @@ class Kube():
             body = self.deploymentObj, 
             namespace = deploymentNameSpace
         )
+
+        # resp = self.v1.create_namespaced_service(
+            
+        #     namespace = deploymentNameSpace,
+        #     body = self._createLoadBalancer(deploymentName), 
+        # )
         return True
 
     @_errorHandler
@@ -180,7 +186,7 @@ class Kube():
         # Update container image
         response = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
         response.spec.template.spec.containers[0].image = image
-        self.deploymentObj.spec.template.spec.containers[0].image = image
+        # self.deploymentObj.spec.template.spec.containers[0].image = image
         # deployment = self.create_deployment_object("mydep1","nginx",image, replicas)
         # print(self.deploymentObj.spec.template.spec.containers[0].image)
         # patch the deployment
@@ -188,7 +194,6 @@ class Kube():
             name = name, 
             namespace = namespace, 
             body = response
-            # body = self.deploymentObj
 
         )
         return True
@@ -221,6 +226,18 @@ class Kube():
         )
         return True
         # print("\n[INFO] deployment's container replicas updated.\n")
+
+    
+    @_errorHandler
+    def replaceDeploymentReplicas(self, name : str, replicas : int, namespace : str = 'default') -> bool:
+        response = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
+        response.spec.replicas  = replicas
+        resp = self.k8s_apps_v1.patch_namespaced_deployment(
+            name = name, 
+            namespace = namespace, 
+            body = response
+        )
+        return True
 
     @_errorHandler
     def deleteDeployment(self,name,namespace) -> bool:
