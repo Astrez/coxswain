@@ -316,4 +316,5 @@ modules.xml
 .ionide
 
 *.yaml
-test.md
+# Temporary files 
+test.*

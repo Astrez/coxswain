@@ -1,5 +1,5 @@
-from .kube import Kube
-from .models import Database
+from ..kube import *
+from ..persistance import *
 
 from typing import TypeVar, Callable, Any
 
