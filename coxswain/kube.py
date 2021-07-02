@@ -293,6 +293,7 @@ class Kube():
 if __name__ == '__main__':
     from time import sleep
     k = Kube("config.yaml")
+    k.createDeployment('flask-deploy', "container", "shriramashagri/backend-flask:version1", 1)
     # print(k.getDeploymentInfo('updated'))
     # k.updateDeploymentReplicas('updated', -2)
     # print(k.getReplicaNumber('updated', 'default'))

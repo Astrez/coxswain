@@ -1,5 +1,5 @@
-from .kube import Kube
-from .models import Database
+from kube import Kube
+from models import Database
 
 from typing import TypeVar, Callable, Any
 
@@ -69,7 +69,7 @@ class Scaler():
         logger.warning("Scaler state changed")
     
     def scale(self, replica : int):
-        logger.info(f"Scaling upto : {replica}")
+        logger.warning(f"Scaling upto : {replica}")
         # self.kube.replaceDeploymentReplicas(DEPLOYMENT, replica)
         self.database.setReplicas(replica)
         self.data = list()

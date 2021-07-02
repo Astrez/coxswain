@@ -47,7 +47,6 @@ def deploymentUpdateGet():
     return render_template("create.html")
 
 @app.route('/deployment/create', methods = ["POST"])
-@login_required
 def createDeployment():
     '''
     Ceate new deployment
@@ -67,7 +66,7 @@ def createDeployment():
             return redirect("/dashboard")
         return redirect("/deployment/create")
     except Exception as e:
-        return Response.responseFormat("", status.error)
+        return Response.responseFormat(e, status.error)
 
 
 @app.route('/deployment/imageupdate', methods = ["POST"])
@@ -80,7 +79,6 @@ def updateImage():
     return Response.responseFormat("", status.failure)
 
 @app.route('/deployment/details', methods = ["GET"])
-@login_required
 @login_required
 def getDeploymentDetails():
     '''
@@ -172,6 +170,7 @@ def signup():
             token = jwt.encode(token, key= "SECRET KEY", algorithm="HS256")
             if type(token) == bytes:
                 token.decode("utf-8")
+            session['username'] = 'exists'
             return redirect("/deployment/create")
     return Response.responseFormat("Database Error: User already exists", status.error)
 
