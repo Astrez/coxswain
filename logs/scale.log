@@ -1,0 +1,17 @@
+Sample autoscaler log:
+
+[28/Jun/2021:15:58:06.401] INFO app.scale:autoscaler: Auto Scaler initialised
+[28/Jun/2021:15:58:06.402] INFO app.scale:setup: Checking state of scaler on cache
+[28/Jun/2021:15:58:06.404] WARNING app.scale:setup: Restarting autoscaler! Data in database will be replaced with fresh values
+[28/Jun/2021:15:58:06.405] INFO app.scale:setup: Initialised state in the database
+[28/Jun/2021:15:58:06.405] INFO app.scale:setReplicas: Initialised replica value in cache
+[28/Jun/2021:15:58:06.405] INFO app.scale:autoscaler: Initialised max replicas as 5
+[28/Jun/2021:15:58:58.412] WARNING app.scale:scale: Scaling upto : 1
+[28/Jun/2021:15:58:58.413] INFO app.scale:monitor: Calculate...
+[28/Jun/2021:15:59:00.416] INFO app.scale:monitor: No scale
+[28/Jun/2021:15:59:00.417] INFO app.scale:monitor: Calculate...
+[28/Jun/2021:15:59:00.419] WARNING app.scale:abort: Stopping autoscaler!
+[28/Jun/2021:15:59:00.422] WARNING app.scale:abort: Scaler state changed
+[28/Jun/2021:15:59:00.422] WARNING app.scale:abort: Stopping autoscaler!
+[28/Jun/2021:15:59:00.425] WARNING app.scale:abort: Scaler state changed
+[28/Jun/2021:15:59:00.426] CRITICAL app.scale:autoscaler: Autoscaler aborting....
