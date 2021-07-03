@@ -1,6 +1,6 @@
-# Docs
+# Docs for auth blueprint endpoints
 
-## `auth/signin`
+## `/auth/signin`
 
 * POST req
 * Body : 
@@ -15,7 +15,7 @@
 ```json
 ```
 
-## `auth/signup`
+## `/auth/signup`
 
 * POST req
 * Body : 

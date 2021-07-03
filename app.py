@@ -1,4 +1,6 @@
+from flask.helpers import url_for
 from coxswain import *
+from blueprints import *
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -15,6 +17,10 @@ LogSetup(app)
 model = Database()
 CORS(app)
 kubeConnection = Kube("config.yaml")
+
+app.register_blueprint(auth, url_prefix='/auth')
+app.register_blueprint(deployment, url_prefix='/deployment')
+app.register_blueprint(details, url_prefix='/details')
 
 # Logger
 Logger = logging.getLogger("app.access")
@@ -116,32 +122,6 @@ def createDeployment():
         return Response.responseFormat("", status.success)
     except Exception as e:
         return Response.responseFormat("", status.error)
-
-# _______________________________AUTH_____________________________________
-# Signin route
-@app.route('/auth/signin', methods = ["POST"])
-def signin():
-    body = request.get_json()
-    if model.compare(body):
-        token = {"username" : body.get("username")}
-        token = jwt.encode(token, key= "SECRET KEY", algorithm="HS256")
-        if type(token) == bytes:
-            token.decode("utf-8")
-        return Response.responseFormat(token, status.success)
-    return Response.responseFormat("", status.unauth)
-
-
-@app.route('/auth/signup', methods = ["POST"])
-def signup():
-    body = request.get_json()
-    if model.newUser(body.get('username'), body.get('password')):
-        token = {"username" : body.get("username")}
-        token = jwt.encode(token, key= "SECRET KEY", algorithm="HS256")
-        if type(token) == bytes:
-            token.decode("utf-8")
-        return Response.responseFormat(token, status.success)
-    return Response.responseFormat("Database Error: User already exists", status.error)
-
 
 @app.after_request
 def after_request(response):
