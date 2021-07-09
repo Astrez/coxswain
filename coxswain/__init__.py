@@ -6,3 +6,4 @@ from .logger import *
 from .persistance import *
 from .autoscaler import *
 from .kube import *
+from .blueprints import *

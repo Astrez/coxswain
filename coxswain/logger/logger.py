@@ -23,9 +23,9 @@ class LogSetup(object):
     '''
 
     LOG_DIR = "./"
-    ERR_FILE = 'app.log'
-    REQ_FILE = 'req.log'
-    SCALER_FILE = 'scale.log'
+    ERR_FILE = 'logs/app.log'
+    REQ_FILE = 'logs/req.log'
+    SCALER_FILE = 'logs/scale.log'
     ERR_LOG_LEVEL = 'DEBUG'
     REQ_LOG_LEVEL = 'INFO'
     SCALER_LOG_LEVEL = 'INFO'

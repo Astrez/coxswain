@@ -1,6 +1,5 @@
 from flask.helpers import url_for
 from coxswain import *
-from blueprints import *
 
 from flask import Flask, request
 from flask_cors import CORS
@@ -27,7 +26,10 @@ Logger = logging.getLogger("app.access")
 
 @app.route('/', methods = ["GET"])
 def hello():
-    return "Hello World", 200
+    with Database() as db:
+        a = 5/0
+        return "No error", 200
+    return "Error", 500
 
 
 @app.route('/dashboard', methods = ["GET"])

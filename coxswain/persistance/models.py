@@ -3,6 +3,7 @@ import hashlib
 import os
 import logging
 import traceback
+import inspect
 
 from typing import Tuple, TypeVar, Callable, Any
 
@@ -25,6 +26,14 @@ class Database():
         self.__redis = redis.Redis()
 
         assert self.__redis.ping(), "Connection Error"
+    
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, ex_type, ex_obj, traceback_obj):
+        if ex_obj:
+            logger.error(str(ex_obj) + '\n' + traceback.format_exc())
+        return True
 
     @property
     def redis(self):
