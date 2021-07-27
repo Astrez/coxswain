@@ -29,3 +29,27 @@ kubernetes.client.exceptions.ApiException: (404)
 Reason: Not Found
 HTTP response headers: HTTPHeaderDict({'Server': 'nginx/1.10.3 (Ubuntu)', 'Date': 'Mon, 28 Jun 2021 12:42:08 GMT', 'Content-Type': 'application/json', 'Content-Length': '222', 'Connection': 'keep-alive', 'Cache-Control': 'no-cache, private', 'X-Kubernetes-Pf-Flowschema-Uid': '00dde116-c112-4c2f-b28e-395bfac35cd7', 'X-Kubernetes-Pf-Prioritylevel-Uid': '75420dee-645c-4488-a3c3-a01ebdf2f742'})
 HTTP response body: {"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"deployments.apps \"deployment\" not found","reason":"NotFound","details":{"name":"deployment","group":"apps","kind":"deployments"},"code":404}
+[09/Jul/2021:20:17:45.769] ERROR app.logger:__exit__: division by zero
+Traceback (most recent call last):
+  File "C:\Users\Shagri\Desktop\coxswain\coxswain\app.py", line 30, in hello
+    a = 5/0
+ZeroDivisionError: division by zero
+
+[09/Jul/2021:20:18:07.822] ERROR app.logger:__exit__: division by zero
+Traceback (most recent call last):
+  File "C:\Users\Shagri\Desktop\coxswain\coxswain\app.py", line 30, in hello
+    a = 5/0
+ZeroDivisionError: division by zero
+
+[09/Jul/2021:20:18:13.694] ERROR app.logger:__exit__: division by zero
+Traceback (most recent call last):
+  File "C:\Users\Shagri\Desktop\coxswain\coxswain\app.py", line 30, in hello
+    a = 5/0
+ZeroDivisionError: division by zero
+
+[09/Jul/2021:20:18:14.861] ERROR app.logger:__exit__: division by zero
+Traceback (most recent call last):
+  File "C:\Users\Shagri\Desktop\coxswain\coxswain\app.py", line 30, in hello
+    a = 5/0
+ZeroDivisionError: division by zero
+

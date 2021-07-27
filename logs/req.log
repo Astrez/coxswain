@@ -6,4 +6,9 @@ Sample request log file:
 127.0.0.1 - - [26/Jun/2021:18:09:11.823] "GET /auth/signup HTTP" 405 METHOD NOT ALLOWED - 178 None PostmanRuntime/7.28.0
 127.0.0.1 - - [26/Jun/2021:18:11:13.340] "POST /auth/signup HTTP" 500 INTERNAL SERVER ERROR - 14 None PostmanRuntime/7.28.0
 127.0.0.1 - - [26/Jun/2021:18:13:28.454] "POST /auth/signup HTTP" 500 INTERNAL SERVER ERROR - 76 None PostmanRuntime/7.28.0
-127.0.0.1 - - [26/Jun/2021:18:13:39.595] "POST /auth/signup HTTP" 200 OK - 43 None PostmanRuntime/7.28.0
+127.0.0.1 - - [26/Jun/2021:18:13:39.595] "POST /auth/signup HTTP" 200 OK - 43 None PostmanRuntime/7.28.0127.0.0.1 - - [09/Jul/2021:14:47:42.752] "GET /auth/signin HTTP" 405 METHOD NOT ALLOWED - 178 None Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+127.0.0.1 - - [09/Jul/2021:14:47:45.770] "GET / HTTP" 500 INTERNAL SERVER ERROR - 5 None Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+127.0.0.1 - - [09/Jul/2021:14:47:46.078] "GET /favicon.ico HTTP" 404 NOT FOUND - 232 http://localhost:5000/ Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+127.0.0.1 - - [09/Jul/2021:14:48:07.823] "GET / HTTP" 500 INTERNAL SERVER ERROR - 5 None Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+127.0.0.1 - - [09/Jul/2021:14:48:13.695] "GET / HTTP" 500 INTERNAL SERVER ERROR - 5 None Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
+127.0.0.1 - - [09/Jul/2021:14:48:14.861] "GET / HTTP" 500 INTERNAL SERVER ERROR - 5 None Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36
