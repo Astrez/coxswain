@@ -1,6 +1,7 @@
 from flask import Blueprint, request
 import jwt
 from ..persistance import *
+from ..utils import *
 
 model = Database()
 
