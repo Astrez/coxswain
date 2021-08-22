@@ -21,7 +21,7 @@ class Kube():
         return wrapper
     
     def __init__(self, configFile : str = None) -> None:
-        config.load_kube_config(config_file=configFile)
+        config.load_kube_config()
         self.v1 = client.CoreV1Api()
         self.k8s_apps_v1 = client.AppsV1Api()
         self.deploymentObj = None
@@ -293,7 +293,7 @@ class Kube():
 if __name__ == '__main__':
     from time import sleep
     k = Kube("config.yaml")
-    k.createDeployment('flask-deploy', "container", "shriramashagri/backend-flask:version1", 1)
+    #k.createDeployment('flask-deploy', "container", "shriramashagri/backend-flask:version1", 1)
     # print(k.getDeploymentInfo('updated'))
     # k.updateDeploymentReplicas('updated', -2)
     # print(k.getReplicaNumber('updated', 'default'))
@@ -301,7 +301,7 @@ if __name__ == '__main__':
     # print(k.createDeployment('updated', 'updated', 'shriramashagri/backend-flask:version1'))
     # sleep(15)
     # bp = k.updateDeploymentImage('updated', 'shriramashagri/backend-flask:version2')
-    # print(k.listPods())
+    print(k.listPods())
     # k.deleteDeployment('updated', 'default')
     
 #     print(bp)
