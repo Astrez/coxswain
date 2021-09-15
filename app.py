@@ -13,7 +13,7 @@ app = Flask(__name__)
 # Logging class init
 LogSetup(app)
 
-model = Database()
+model = NoSQLDatabase()
 CORS(app)
 # kubeConnection = Kube("config.yaml")
 

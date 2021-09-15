@@ -9,7 +9,7 @@ from typing import Tuple, TypeVar, Callable, Any
 F = TypeVar('F', bound=Callable[..., Any])
 logger = logging.getLogger("app.logger")
 
-class Database():
+class NoSQLDatabase():
 
     def _errorHandler(func : F) -> F:
         def wrapper(self, *args, **kwargs) -> Any:

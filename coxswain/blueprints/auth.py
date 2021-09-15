@@ -3,14 +3,14 @@ import jwt
 from ..persistance import *
 from ..utils import *
 
-model = Database()
+model = NoSQLDatabase()
 
 auth = Blueprint('auth', __name__)
 
 @auth.route('/signin', methods = ["POST"])
 def signin():
     body = request.get_json()
-    with Database() as model:
+    with NoSQLDatabase() as model:
         if model.compare(body):
             token = {"username" : body.get("username")}
             token = jwt.encode(token, key= "SECRET KEY", algorithm="HS256")

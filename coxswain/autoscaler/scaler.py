@@ -27,7 +27,7 @@ class Scaler():
         return wrapper
 
     @_errorHandler
-    def __init__(self, database : Database = None, kube : Kube = None) -> None:
+    def __init__(self, database : NoSQLDatabase = None, kube : Kube = None) -> None:
         self.kube = kube
         self.database = database
         self.scaleFlag = False
