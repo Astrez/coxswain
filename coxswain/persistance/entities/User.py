@@ -12,17 +12,18 @@ class User:
         self.userId = None
 
     
-    def getInsertSql(self, data : Union[list, tuple]) -> Tuple[str, tuple]:
-        returnData = []
-        for user in data:
-            # Validate user
-            if not user:
-                raise Exception("Invalid or Incomplete User Details")
-            returnData.extend(user)
-    
+    def getInsertSql(self) -> Tuple[str, tuple]:
+        data = tuple()
         sql = 'INSERT into users (name, email, username, password, role) VALUES ' + ", ".join(["(%s, %s, %s, %s, %s)" for _ in data])
-
-        return sql, tuple(returnData)
+        # TODO: change the tuple
+        return sql, data
+    
+    @classmethod
+    def fromUUID(cls, key : str, sqlMethod : function):
+        data = sqlMethod(key)
+        if data:
+            return cls(*data)
+        return None
     
     @staticmethod
     def getUserTable() -> str:

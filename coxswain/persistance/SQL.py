@@ -17,3 +17,11 @@ class SQLDatabase:
             except Exception as e:
                 raise Exception
         return wrapper
+    
+    def addNewUser(self, user : User):
+        sql, data = user.getInsertSql()
+    
+    def getUser(self, userId : str):
+        sql = 'SELECT name, email, username, password, role, userUUID FROM users WHERE userUUID = %s'
+        self.cur.execute(sql, (userId, ))
+        return self.cur.fetchone()

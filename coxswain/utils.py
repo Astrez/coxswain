@@ -20,6 +20,7 @@ class status(tuple, Enum):
     invalid = "INVALID", 500
     unauth = 'NOT AUTHORISED', 403
     error = "ERROR", 500
+    bad_request = "BAD REQUEST", 401
 
 class Response:
     @staticmethod
