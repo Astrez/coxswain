@@ -8,6 +8,13 @@ class SQLDatabase:
     def __init__(self):
         self.conn = psycopg2.connect(**POSTGRES_CREDENTIALS)
         self.cur = self.conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        try:
+            self.cur.execute(User.getUserTable())
+        except Exception as e:
+            print(e)
+            self.conn.rollback()
+        else:
+            self.conn.commit()
 
     def _errorhandler(f):    
         @wraps(f)
@@ -18,10 +25,40 @@ class SQLDatabase:
                 raise Exception
         return wrapper
     
-    def addNewUser(self, user : User):
+    def addNewUser(self, user : User) -> None:
+        """Add New user to the database
+
+        Args:
+            user (User): User Object from entities
+        """        
+        # Check parameter datatype
+        assert type(user) == User, "Wrong parameter datatype"
+
         sql, data = user.getInsertSql()
+        try:
+            self.cur.execute(sql, data)
+        except Exception as e:
+            print(e)
+            self.conn.rollback()
+        else:
+            self.conn.commit
     
-    def getUser(self, userId : str):
+    def getUser(self, userId : str) -> dict:
+        """Get User Details
+
+        Args:
+            userId (str): user UUID
+
+        Returns:
+            dict: userdata
+        """        
+
+        # Check parameter datatype
+        assert type(userId) == str, "Wrong parameter datatype"
+
         sql = 'SELECT name, email, username, password, role, userUUID FROM users WHERE userUUID = %s'
         self.cur.execute(sql, (userId, ))
-        return self.cur.fetchone()
+        data = self.cur.fetchone()
+        if data:
+            return dict(data)
+        return None

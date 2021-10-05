@@ -1,0 +1,20 @@
+{
+    "persistance" : {
+        "sql" : {
+            "host": "",
+            "port" : 5382,
+            "password" : ""
+        }, 
+        "nosql" : {
+            "host": "",
+            "port" : 5382,
+            "password" : ""
+        }
+    }, 
+    "kubernetes" : {
+        "path_to_config_file" : ""
+    }, 
+    "flags" : {
+
+    }
+}

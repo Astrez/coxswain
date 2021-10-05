@@ -14,6 +14,28 @@ def generate(
         privatePath (str, optional): Path to private key .pem file. Defaults to os.path.join(os.getcwd(), 'private_key.pem').
     """    
 
+    # TODO: Fix and test
+    private_key = rsa.generate_private_key(
+        public_exponent=65537,
+        key_size=2048,
+        backend=default_backend()
+    )
+    public_key = private_key.public_key()
+
+    return public_key, private_key
+
+
+def generateAndStore(
+    publicPath = os.path.join(os.getcwd(), 'public_key.pem'), 
+    privatePath = os.path.join(os.getcwd(), 'private_key.pem')
+    ):
+    """Generate public and private keys for jwt
+
+    Args:
+        publicPath (str, optional): Path to public key .pem file. Defaults to os.path.join(os.getcwd(), 'public_key.pem').
+        privatePath (str, optional): Path to private key .pem file. Defaults to os.path.join(os.getcwd(), 'private_key.pem').
+    """    
+
     private_key = rsa.generate_private_key(
         public_exponent=65537,
         key_size=2048,
