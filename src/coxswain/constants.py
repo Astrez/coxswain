@@ -1,3 +1,7 @@
+# DB credentials
+
+# TODO: Is SQL really required?
+
 DB_CRED = {
     "host": "",
     "port" : 5382,

@@ -1,3 +1,3 @@
 # Coxswain
 
-A Chained Service generator for Kubernetes GUI client
+Core module for kubernetes deployment manager and Autoscaler
