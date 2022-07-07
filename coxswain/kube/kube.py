@@ -1,10 +1,13 @@
+import subprocess
 from typing import TypeVar, Callable, Any, List
 from kubernetes import client, config
 from kubernetes.client import exceptions
 
-import yaml
 import traceback
 import logging
+import json
+
+import yaml
 
 F = TypeVar('F', bound=Callable[..., Any])
 logger = logging.getLogger("app.logger")
@@ -17,11 +20,11 @@ class Kube():
                 return func(self, *args, **kwargs)
             except exceptions.ApiException as e:
                 logger.error(str(e) + '\n' + traceback.format_exc())
-                return None
+                raise Exception(str(e) + '\n' + traceback.format_exc())
         return wrapper
     
     def __init__(self, configFile : str = None) -> None:
-        config.load_kube_config(config_file=configFile)
+        config.load_kube_config()
         self.v1 = client.CoreV1Api()
         self.k8s_apps_v1 = client.AppsV1Api()
         self.deploymentObj = None
@@ -73,7 +76,7 @@ class Kube():
 
         return deployment
     
-    def _createLoadBalancer(self, deploymentName : str):
+    def _createLoadBalancer(self, deploymentName : str, port : int, targetPort : int):
         
         ports = client.V1ServicePort(
             # protocol="TCP",
@@ -83,7 +86,8 @@ class Kube():
 
         spec = client.V1ServiceSpec(
             selector = {"app": deploymentName},
-            ports = [client.V1ServicePort(port=8080, target_port=5000)],
+            # ports = [client.V1ServicePort(port=8080, target_port=5000)],
+            ports = [client.V1ServicePort(port=port, target_port=targetPort)],
             type = "LoadBalancer",
             # external_i_ps=["172.31.37.96"]
         )
@@ -91,7 +95,7 @@ class Kube():
         deployment = client.V1Service(
             api_version = "v1",
             kind = "Service",
-            metadata = client.V1ObjectMeta(name = deploymentName + '-service-beta', annotations={"metallb.universe.tf/address-pool" : "production-public-ips"}),
+            metadata = client.V1ObjectMeta(name = deploymentName),
             spec = spec,
             # status = client.V1LoadBalancerStatus(
             #     ingress= client.V1LoadBalancerIngress(
@@ -102,20 +106,32 @@ class Kube():
         return deployment
 
     @_errorHandler
-    def createDeployment(self,deploymentName : str, conatinerName : str, conatinerImage : str, Replicas : int = 1, deploymentNameSpace : str = 'default') -> bool:
+    def createDeploymentByObject(self,deploymentName : str, conatinerName : str, conatinerImage : str, port : int, targetPort : int, replicas : int = 1, deploymentNameSpace : str = 'default') -> bool:
         # Create deployement
-        self.deploymentObj = self._createDeploymentObject(deploymentName, conatinerName, conatinerImage, Replicas)
+        self.deploymentObj = self._createDeploymentObject(deploymentName, conatinerName, conatinerImage, replicas)
 
         resp = self.k8s_apps_v1.create_namespaced_deployment(
             body = self.deploymentObj, 
             namespace = deploymentNameSpace
         )
 
-        # resp = self.v1.create_namespaced_service(
+        resp = self.v1.create_namespaced_service(
             
-        #     namespace = deploymentNameSpace,
-        #     body = self._createLoadBalancer(deploymentName), 
-        # )
+            namespace = deploymentNameSpace,
+            body = self._createLoadBalancer(deploymentName, port, targetPort), 
+        )
+        return True
+
+    @_errorHandler
+    def createDeploymentByYamlFile(self, dep) -> bool:
+        # with open("deployment.yaml", "r") as f:
+            # dep = yaml.load_all(f, Loader=yaml.FullLoader)
+        for i in dep:
+            if i['kind'] == 'Deployment':
+                resp = self.k8s_apps_v1.create_namespaced_deployment(body=i, namespace="default")
+            elif i['kind'] == 'Service':
+                resp = self.v1.create_namespaced_service(body=i, namespace="default")
+
         return True
 
     @_errorHandler
@@ -173,7 +189,7 @@ class Kube():
                     "requests" : resp.spec.template.spec.containers[0].resources.requests
                 }
                 ans.append(d)
-        print(ans)
+        # print(ans)
         return ans
 
     @_errorHandler
@@ -240,7 +256,7 @@ class Kube():
         return True
 
     @_errorHandler
-    def deleteDeployment(self,name,namespace) -> bool:
+    def deleteDeployment(self, name, namespace) -> bool:
         resp = self.k8s_apps_v1.delete_namespaced_deployment(
             name = name,
             namespace = namespace,
@@ -252,18 +268,50 @@ class Kube():
         return True
         # print("\n[INFO] deployment deleted.")
 
-    # def create_pod(self):
+    @_errorHandler
+    def getPodsMetrics(self) -> List[dict]:
+        cmd = subprocess.Popen("kubectl get --raw ""/apis/metrics.k8s.io/v1beta1/namespaces/default/pods/""", shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = cmd.stdout.read() + cmd.stderr.read()
+        str = output.decode("ascii")
+        res = json.loads(str)
+        ans = list()
+        for i in res['items']:
+            d = {
+                "podName" : i['metadata']['name'],
+                "cpuUsage" : i['containers'][0]['usage']['cpu'],
+                "memoryUsage" : i['containers'][0]['usage']['memory']
+            }
+            ans.append(d)
+        # print(ans)
+        return ans 
+
+    @_errorHandler
+    def getMetricsForML(self) -> int:
+        cmd = subprocess.Popen("kubectl get --raw ""/api/v1/nodes/ip-172-31-37-17.us-west-2.compute.internal/proxy/stats/summary""", shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        output = cmd.stdout.read() + cmd.stderr.read()
+        str = output.decode("ascii")
+        res = json.loads(str)
+        ans = 0
+        for i in res['pods']:
+            # print(i['podRef']['namespace'])
+            if(i['podRef']['namespace'] == 'default'):
+                # print(i['network']['rxBytes'])
+                ans += i['network']['rxBytes']
+        return ans
+
+    # def create_pod(self, name : str, containerName: str, containerImage: str ):
     #     pod=client.V1Pod()
     #     spec=client.V1PodSpec()
-    #     pod.metadata=client.V1ObjectMeta(name="busybox")
+    #     pod.metadata=client.V1ObjectMeta(name=name)
     #     container=client.V1Container()
-    #     container.image="busybox"
-    #     container.args=["sleep", "3600"]
-    #     container.name="busybox"    
+    #     container.image=containerImage
+    #     # container.args=["sleep", "3600"]
+    #     container.name=containerName    
     #     spec.containers = [container]
     #     pod.spec = spec
     #     self.v1.create_namespaced_pod(namespace="default",body=pod)
     #     print("Pod created.")
+    #     return True
 
     # def display_pods_of_node(self,node_name):
     #     print("Listing pods with their IPs on node: ", node_name)
@@ -272,31 +320,36 @@ class Kube():
     #     for i in ret.items:
     #         print("%s\t%s\t%s" %(i.status.pod_ip, i.metadata.namespace, i.metadata.name))
 
-    # def display_pods_log(self,name,namespace):    
+    # def display_pods_log(self,name: str ,namespace: str = 'default'):    
     #     res = self.v1.read_namespaced_pod_log(name=name, namespace=namespace)
     #     print(res)
+    #     return res
 
-    # def delete_pod(self,name,namespace):
+    # def delete_pod(self,name: str ,namespace: str = 'default'):
     #     self.v1.delete_namespaced_pod(name=name, namespace=namespace, body=client.V1DeleteOptions())
-    #     print("Pod deleted.")
+    #     return True
 
 
 
 if __name__ == '__main__':
     from time import sleep
-    k = Kube("config.yaml")
-    # print(k.getDeploymentInfo('updated'))
-    # k.updateDeploymentReplicas('updated', -2)
-    # print(k.getReplicaNumber('updated', 'default'))
+    k = Kube()
+    # print(k.getDeploymentInfo('flaskapi-deployment'))
+    # k.updateDeploymentReplicas('flaskapi-deployment', -1)
+    # print(k.getReplicaNumber('flaskapi-deployment', 'default'))
     # print(k.getDeploymentInfo('updated'))
     # print(k.createDeployment('updated', 'updated', 'shriramashagri/backend-flask:version1'))
     # sleep(15)
-    # bp = k.updateDeploymentImage('updated', 'shriramashagri/backend-flask:version2')
-    # print(k.listPods())
-    # k.deleteDeployment('updated', 'default')
+    # k.updateDeploymentImage('flaskapi-deployment', 'shriramashagri/backend-flask:version1')
+    # print(k.getPodsMetrics())
+    # print(k.getMetricsForML())
+    # k.createDeploymentByYamlFile()
+    # print(k.listAllDeployments())
+    # k.deleteDeployment('nginx-deployment', 'default')
     
 #     print(bp)
-    # k.createDeployment("mydep1","mycontainer","nginx:1.16.0",3,"default")
+    k.createDeploymentByYamlFile()
+    # k.createDeploymentByObject("mydep1","mycontainer","shriramashagri/backend-flask:version1", 8080, 5000, 1, "default")
     # print(k.deploymentObj);
     # k.deleteDeployment("mydep1","default")
     # print(k.listAllDeployments())
