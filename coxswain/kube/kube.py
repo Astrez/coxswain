@@ -294,8 +294,8 @@ class Kube():
         # print("\n[INFO] deployment deleted.")
 
     @_errorHandler
-    def getPodsMetrics(self) -> List[dict]:
-        cmd = subprocess.Popen("kubectl get --raw ""/apis/metrics.k8s.io/v1beta1/namespaces/default/pods/""", shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+    def getPodsMetrics(self, namespace : str = 'default') -> List[dict]:
+        cmd = subprocess.Popen("kubectl get --raw ""/apis/metrics.k8s.io/v1beta1/namespaces/"+namespace+"/pods/""", shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         output = cmd.stdout.read() + cmd.stderr.read()
         str = output.decode("ascii")
         res = json.loads(str)
