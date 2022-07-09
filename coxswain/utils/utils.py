@@ -19,8 +19,9 @@ class status(tuple, Enum):
     failure = "FAILURE", 200
     invalid = "INVALID", 500
     unauth = 'NOT AUTHORISED', 403
+    unauthorized = 'NOT AUTHORISED', 401
     error = "ERROR", 500
-    bad_request = "BAD REQUEST", 401
+    badrequest = "BAD REQUEST", 401
 
 class Response:
     @staticmethod
