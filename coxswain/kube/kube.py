@@ -138,6 +138,11 @@ class Kube():
         return True
 
     @_errorHandler
+    def getNamespaces(self):
+        resp = self.v1.list_namespace()
+        return resp
+
+    @_errorHandler
     def getDeploymentInfo(self, name : str, namespace : str = 'default') -> dict:
         resp = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
         ans = None
