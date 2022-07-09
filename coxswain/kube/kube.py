@@ -123,15 +123,18 @@ class Kube():
         return True
 
     @_errorHandler
-    def createDeploymentByYamlFile(self, dep) -> bool:
+    def createDeploymentByYamlFile(self, dep, namespace = "default") -> bool:
         # with open("deployment.yaml", "r") as f:
             # dep = yaml.load_all(f, Loader=yaml.FullLoader)
-        for i in dep:
-            if i['kind'] == 'Deployment':
-                resp = self.k8s_apps_v1.create_namespaced_deployment(body=i, namespace="default")
-            elif i['kind'] == 'Service':
-                resp = self.v1.create_namespaced_service(body=i, namespace="default")
 
+        if dep['kind'] == 'Deployment':
+                resp = self.k8s_apps_v1.create_namespaced_deployment(body=dep, namespace=namespace)
+        return True
+
+    @_errorHandler
+    def createServiceByYamlFile(self, dep, namespace = "default") -> bool:
+        if  dep['kind'] == 'Service':
+                resp = self.v1.create_namespaced_service(body=dep, namespace=namespace)
         return True
 
     @_errorHandler
@@ -143,12 +146,19 @@ class Kube():
                 "name" : resp.metadata.name, 
                 "namespace" :resp.metadata.namespace,
                 "revision" : resp.metadata.generation, 
-                "numberOfContainers" : len(resp.spec.template.spec.containers),
-                "containerName" : resp.spec.template.spec.containers[0].name,
-                "containerImage" : resp.spec.template.spec.containers[0].image, 
                 "replicas" : resp.spec.replicas,
-                "limits": resp.spec.template.spec.containers[0].resources.limits , 
-                "requests" : resp.spec.template.spec.containers[0].resources.requests
+                "numberOfContainers" : len(resp.spec.template.spec.containers),
+                "containers" : [
+              
+                    {
+                        "containerName" : i.name,
+                        "containerImage" : i.image, 
+                        "limits": i.resources.limits , 
+                        "requests" : i.resources.requests
+                    }
+                    for i in resp.spec.template.spec.containers 
+                ]
+               
             }
         return ans
     
@@ -160,11 +170,18 @@ class Kube():
                 "podName" :  i.metadata.name, 
                 "namespace" :  i.metadata.namespace ,
                 "podIP" : i.status.pod_ip,
+                "replicas" : i.spec.replicas,
                 "numberOfContainers" : len(i.spec.containers),
-                "containerName" :  i.spec.containers[0].name,
-                "containerImage" : i.spec.containers[0].image, 
-                "limits": i.spec.containers[0].resources.limits , 
-                "requests" : i.spec.containers[0].resources.requests,
+                "containers" : [
+              
+                    {
+                        "containerName" : j.name,
+                        "containerImage" : j.image, 
+                        "limits": j.resources.limits , 
+                        "requests" : j.resources.requests
+                    }
+                    for j in i.spec.containers
+                ],
                 "status" : i.status.phase
             } 
             for i in pods.items if i.metadata.namespace != "kube-system" or sendall
@@ -181,12 +198,18 @@ class Kube():
                     "name" : resp.metadata.name, 
                     "namespace" :resp.metadata.namespace,
                     "revision" : resp.metadata.generation,
-                    "numberOfContainers" : len(resp.spec.template.spec.containers),
-                    "containerName" : resp.spec.template.spec.containers[0].name,
-                    "containerImage" : resp.spec.template.spec.containers[0].image, 
                     "replicas" : resp.spec.replicas,
-                    "limits": resp.spec.template.spec.containers[0].resources.limits, 
-                    "requests" : resp.spec.template.spec.containers[0].resources.requests
+                    "numberOfContainers" : len(resp.spec.template.spec.containers),
+                    "containers" : [
+              
+                    {
+                        "containerName" : j.name,
+                        "containerImage" : j.image, 
+                        "limits": j.resources.limits , 
+                        "requests" : j.resources.requests
+                    }
+                    for j in resp.spec.template.spec.containers
+                ]
                 }
                 ans.append(d)
         # print(ans)
@@ -198,10 +221,12 @@ class Kube():
         return int(resp.spec.replicas)
 
     @_errorHandler
-    def updateDeploymentImage(self, name : str, image : str, namespace : str = 'default') -> bool:
+    def updateDeploymentImage(self, name : str, image : str, containerName : str, namespace : str = 'default') -> bool:
         # Update container image
         response = self.k8s_apps_v1.read_namespaced_deployment(name, namespace)
-        response.spec.template.spec.containers[0].image = image
+        for i in response.spec.template.spec.containers:
+            if i.name == containerName:
+                i.image = image
         # self.deploymentObj.spec.template.spec.containers[0].image = image
         # deployment = self.create_deployment_object("mydep1","nginx",image, replicas)
         # print(self.deploymentObj.spec.template.spec.containers[0].image)
