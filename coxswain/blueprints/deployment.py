@@ -17,11 +17,12 @@ def dashboard():
         details = kubeConnection.getPodsMetrics()
         return Response.responseFormat(details, status.success)
     except Exception as e:
-        return Response.responseFormat("", status.error)
+        # print(str(e) + traceback.format_exc())
+        return Response.responseFormat(str(e) + traceback.format_exc(), status.error)
 
 # Deployment details page
 
-@deployment.route('/deployments', methods = ["GET"])
+@deployment.route('/get', methods = ["GET"])
 def getDeployments():
     try:
         details = kubeConnection.listAllDeployments()
@@ -48,11 +49,13 @@ def replaceImage():
         name, namespace, container, image = body.get("name", None), body.get("namespace", None), body.get("container", None), body.get("image", None)
         if name and namespace and container and image:
             # TODO: Change here
-            details = kubeConnection.updateDeploymentImage(name, image, namespace=namespace)
+            details = kubeConnection.updateDeploymentImage(name, image, container, namespace=namespace)
 
             return Response.responseFormat(details, status.success)
         return Response.responseFormat("", status.badrequest)
     except Exception as e:
+        print(str(e))
+        print(traceback.format_exc())
         return Response.responseFormat("", status.error)
 
 @deployment.route('/delete', methods = ["POST"])
@@ -68,12 +71,13 @@ def deleteDeployment():
         return Response.responseFormat("", status.error)
 
 # Pod details
-@deployment.route('/pod/details', methods = ["GET"])
+@deployment.route('/pod/get', methods = ["GET"])
 def getpods():
     try:
         details = kubeConnection.listPods(sendall=True)
         return Response.responseFormat(details, status.success)
     except Exception as e:
+        print(str(e) + traceback.format_exc())
         return Response.responseFormat("", status.error)
 
 
@@ -83,18 +87,6 @@ def getpods():
 
 @deployment.route('/create', methods = ["POST"])
 def createDeployment():
-    '''
-    Create new deployment
-    {
-        "deploymentName" : "name",
-        "containerName" : "container name",
-        "containerImage" : "image name from dockerhub",
-        "port" : 8080,
-        "targetPort" : 5000,
-        "replicas" : 1,
-        "deploymentNamespace" : "default",
-    }
-    '''
     body = request.get_json()
     try:
         replicas = body.get('replicas')

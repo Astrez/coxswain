@@ -140,7 +140,10 @@ class Kube():
     @_errorHandler
     def getNamespaces(self):
         resp = self.v1.list_namespace()
-        return resp
+        namespaces = []
+        for item in resp.items:
+            namespaces.append(item.metadata.name)
+        return namespaces
 
     @_errorHandler
     def getDeploymentInfo(self, name : str, namespace : str = 'default') -> dict:
@@ -175,7 +178,7 @@ class Kube():
                 "podName" :  i.metadata.name, 
                 "namespace" :  i.metadata.namespace ,
                 "podIP" : i.status.pod_ip,
-                "replicas" : i.spec.replicas,
+                "replicas" : "NA",
                 "numberOfContainers" : len(i.spec.containers),
                 "containers" : [
               
@@ -300,10 +303,10 @@ class Kube():
 
     @_errorHandler
     def getPodsMetrics(self, namespace : str = 'default') -> List[dict]:
-        cmd = subprocess.Popen("kubectl get --raw ""/apis/metrics.k8s.io/v1beta1/namespaces/"+namespace+"/pods/""", shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = subprocess.Popen("kubectl get --raw /apis/metrics.k8s.io/v1beta1/pods/", shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         output = cmd.stdout.read() + cmd.stderr.read()
-        str = output.decode("ascii")
-        res = json.loads(str)
+        output_str = output.decode("ascii")
+        res = json.loads(output_str)
         ans = list()
         for i in res['items']:
             d = {
@@ -378,8 +381,8 @@ if __name__ == '__main__':
     # k.deleteDeployment('nginx-deployment', 'default')
     
 #     print(bp)
-    k.createDeploymentByYamlFile()
-    # k.createDeploymentByObject("mydep1","mycontainer","shriramashagri/backend-flask:version1", 8080, 5000, 1, "default")
+    # k.createDeploymentByYamlFile()
+    k.createDeploymentByObject("test-deployment", "flask-container", "shriramashagri/backend-flask:version1", 8080, 5000, 1, "default")
     # print(k.deploymentObj);
     # k.deleteDeployment("mydep1","default")
     # print(k.listAllDeployments())
