@@ -13,8 +13,10 @@ app = Flask(__name__)
 # Logging class init
 LogSetup(app)
 
-CORS(app)
+# CORS(app)
 kubeConnection = Kube()
+
+cors = CORS(app, resources={r"/" : {"origins" : ""}})
 
 # Logger
 Logger = logging.getLogger("app.access")
