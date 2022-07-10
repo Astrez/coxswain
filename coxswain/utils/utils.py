@@ -7,7 +7,7 @@ import logging
 import traceback
 
 # Logger for errors
-errLogger = logging.getLogger("app.logger")
+# errLogger = logging.getLogger("app.logger")
 
 F = TypeVar('F', bound=Callable[..., Any])
 
@@ -50,7 +50,7 @@ class Utils:
                         return Response.responseFormat("Please include all valid parameters", status.invalid)
                     return f(data, *args, **kwargs)
                 except Exception as e:
-                    errLogger.error(traceback.format_exc())
+                    # errLogger.error(traceback.format_exc())
                     return Response.responseFormat(str(e), status.error)
             return wrapper
         return decorated
@@ -71,7 +71,7 @@ class Utils:
                         return Response.responseFormat("Please include all valid key value pairs", status.invalid)
                     return Response.responseFormat("Please include body", status.invalid)
                 except Exception as e:
-                    errLogger.error(traceback.format_exc())
+                    # errLogger.error(traceback.format_exc())
                     return Response.responseFormat(str(e), status.error)
             return wrapper
         return decorated

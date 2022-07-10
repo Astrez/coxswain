@@ -4,13 +4,13 @@ from kubernetes import client, config
 from kubernetes.client import exceptions
 
 import traceback
-import logging
+# import logging
 import json
 
 import yaml
 
 F = TypeVar('F', bound=Callable[..., Any])
-logger = logging.getLogger("app.logger")
+# logger = logging.getLogger("app.logger")
 
 class Kube():
 
@@ -19,7 +19,8 @@ class Kube():
             try:
                 return func(self, *args, **kwargs)
             except exceptions.ApiException as e:
-                logger.error(str(e) + '\n' + traceback.format_exc())
+                # logger.error(str(e) + '\n' + traceback.format_exc())
+                print(str(e) + '\n' + traceback.format_exc())
                 raise Exception(str(e) + '\n' + traceback.format_exc())
         return wrapper
     
@@ -123,18 +124,13 @@ class Kube():
         return True
 
     @_errorHandler
-    def createDeploymentByYamlFile(self, dep, namespace = "default") -> bool:
-        # with open("deployment.yaml", "r") as f:
-            # dep = yaml.load_all(f, Loader=yaml.FullLoader)
-
-        if dep['kind'] == 'Deployment':
-                resp = self.k8s_apps_v1.create_namespaced_deployment(body=dep, namespace=namespace)
-        return True
-
-    @_errorHandler
-    def createServiceByYamlFile(self, dep, namespace = "default") -> bool:
-        if  dep['kind'] == 'Service':
-                resp = self.v1.create_namespaced_service(body=dep, namespace=namespace)
+    def createByYamlFile(self, dep, dtype, namespace = "default") -> bool:
+        if dtype == 'Deployment':
+            resp = self.k8s_apps_v1.create_namespaced_deployment(body=dep, namespace=namespace)
+        elif dtype == "Service":
+            resp = self.v1.create_namespaced_service(body=dep, namespace=namespace)
+        else:
+            raise Exception("invalid type")
         return True
 
     @_errorHandler
