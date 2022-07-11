@@ -23,7 +23,7 @@ Logger = logging.getLogger("app.access")
 
 app.register_blueprint(auth, url_prefix='/api/auth')
 app.register_blueprint(deployment, url_prefix='/api/deployment')
-app.register_blueprint(auth)
+app.register_blueprint(autoscale, url_prefix='/api/autoscale')
 
 
 @app.route('/', methods = ["GET"])

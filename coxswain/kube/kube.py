@@ -316,7 +316,7 @@ class Kube():
 
     @_errorHandler
     def getMetricsForML(self) -> int:
-        cmd = subprocess.Popen("kubectl get --raw ""/api/v1/nodes/ip-172-31-37-17.us-west-2.compute.internal/proxy/stats/summary""", shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
+        cmd = subprocess.Popen("kubectl get --raw ""/api/v1/nodes/ip-172-31-29-188.us-west-2.compute.internal/proxy/stats/summary""", shell=True, stdout=subprocess.PIPE, stdin=subprocess.PIPE, stderr=subprocess.PIPE)
         output = cmd.stdout.read() + cmd.stderr.read()
         str = output.decode("ascii")
         res = json.loads(str)
